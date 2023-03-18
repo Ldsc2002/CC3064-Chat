@@ -1,0 +1,5 @@
+*.plist
+.vscode/*
+**/Contents/Resources/*
+Server/server
+Client/client

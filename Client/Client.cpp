@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>  
 #include <sys/socket.h>
+#include <cstring>
 
 int main() {
     struct sockaddr_in serverAddress;
@@ -30,17 +31,17 @@ int main() {
         return 1;
     }
 
-    send(serverSocket, "Hello from client", 17, 0);
-    printf("Message sent to server\n");
+    while (true) {
+        char buffer[1024] = {0};
+        printf("Enter message to send to server ('exit' to quit): ");
+        scanf("%s", buffer);
 
-    char buffer[1024] = {0};
-    int connectionData = read(serverSocket, buffer, 1024);
-    if (connectionData < 0) {
-        printf("Error reading from socket\n");
-        return 1;
+        if (strcmp(buffer, "exit") == 0) {
+            break;
+        }
+
+        send(serverSocket, buffer, strlen(buffer), 0);
     }
-
-    printf("%s\n", buffer);
 
     close(serverSocket);
     shutdown(serverSocket, SHUT_RDWR);

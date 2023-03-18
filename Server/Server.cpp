@@ -4,6 +4,28 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+void* clientHandler(void* arg) {
+    pthread_t thisThread = pthread_self();
+    int clientSocket = *(int *) arg;
+
+    printf("Thread %lu is handling client\n", thisThread);
+
+    char buffer[1024] = {0};
+    int readResult;
+    
+    while (true) {
+        readResult = read(clientSocket, buffer, 1024);
+        if (readResult < 0) {
+            printf("Error reading from socket\n");
+            pthread_exit(NULL);
+        }
+
+        printf("%lu --- Message received from client: %s\n", thisThread, buffer);
+    }
+
+    pthread_exit(NULL);
+}
+
 int main() {
     struct sockaddr_in serverAddress;
     int serverSocket;
@@ -25,7 +47,6 @@ int main() {
     serverAddress.sin_addr.s_addr = INADDR_ANY;
     serverAddress.sin_port = htons(8080);
 
-
     int bindResult = bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
     if (bindResult < 0) {
         printf("Error binding socket\n");
@@ -37,23 +58,20 @@ int main() {
         return 1;
     }
 
-    int newSocket = accept(serverSocket, (struct sockaddr *) &serverAddress, (socklen_t *) &serverAddress);
-    if (newSocket < 0) {
-        printf("Error accepting connection\n");
-        return 1;
+    while (true) {
+        printf("Waiting for client to connect...\n");
+            
+        int size = sizeof(serverAddress);
+        int newSocket = accept(serverSocket, (struct sockaddr *) &serverAddress, (socklen_t *) &size);        
+        
+        if (newSocket < 0) {
+            printf("Error accepting connection\n");
+            return 1;
+        }
+
+        pthread_t thread;
+        pthread_create(&thread, NULL, &clientHandler, (void *) &newSocket);
     }
-
-    char buffer[1024] = {0};
-    int connectionData = read(newSocket, buffer, 1024);
-    if (connectionData < 0) {
-        printf("Error reading from socket\n");
-        return 1;
-    }
-
-    printf("%s\n", buffer);
-
-    send(newSocket, "Hello from server", 17, 0);
-    printf("Message sent to client\n");
 
     close(serverSocket);
     shutdown(serverSocket, SHUT_RDWR);

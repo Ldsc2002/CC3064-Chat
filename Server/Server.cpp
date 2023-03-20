@@ -17,10 +17,13 @@ void* clientHandler(void* arg) {
         readResult = read(clientSocket, buffer, 1024);
         if (readResult < 0) {
             printf("Error reading from socket\n");
-            pthread_exit(NULL);
+            break;
+        } else if (readResult == 0) {
+            printf("Client disconnected\n");
+            break;
+        } else {
+            printf("%lu --- Message received from client: %s\n", thisThread, buffer);
         }
-
-        printf("%lu --- Message received from client: %s\n", thisThread, buffer);
     }
 
     pthread_exit(NULL);

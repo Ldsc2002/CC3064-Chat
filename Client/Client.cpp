@@ -101,15 +101,54 @@ int main() {
     printf("Email: %s\n", buffer);
 
     while (true) {
-        char buffer[1024] = {0};
-        printf("Enter message to send to server ('exit' to quit): ");
-        scanf("%s", buffer);
+        printf("1. Open global chat\n");
+        printf("2. Open private chat\n");
+        printf("3. Exit\n");
 
-        if (strcmp(buffer, "exit") == 0) {
-            break;
+        int choice;
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: {
+                int pid = fork();
+                bool running = true;
+
+                if (pid == 0) {
+                    // while (running) {
+                    //     char buffer[1024] = {0};
+                    //     int readResult = read(serverSocket, buffer, 1024);
+
+                    //     printf("Message: %s\n", buffer);
+                    // }
+                } else {
+                    while (running) {
+                        char buffer[1024] = {0};
+                        printf("Enter message ('exit' to return to menu): ");
+                        scanf("%s", buffer);
+
+                        if (strcmp(buffer, "exit") == 0) {
+                            running = false;
+                        }
+
+                        send(serverSocket, buffer, strlen(buffer), 0);
+                    }
+
+                    wait(NULL);
+                }
+            }
+            case 2: {
+                printf("Opening private chat\n");
+                break;
+            }
+            case 3: {
+                printf("Exiting\n");
+                break;
+            }
+            default: {
+                printf("Invalid choice\n");
+                break;
+            }
         }
-
-        send(serverSocket, buffer, strlen(buffer), 0);
     }
 
     close(serverSocket);

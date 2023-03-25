@@ -71,10 +71,29 @@ int main() {
         printf("Error connecting to server\n");
         return 1;
     }
-
+    
     char buffer[1024] = {0};
-    printf("Enter enter email address: ");
-    scanf("%s", buffer);
+
+    while (true) {
+        buffer[1024] = {0};
+
+        printf("Enter enter email address: ");
+        scanf("%s", buffer);
+
+        bool hasAt = false;
+        for (int i = 0; i < strlen(buffer); i++) {
+            if (buffer[i] == '@') {
+                hasAt = true;
+                break;
+            }
+        }
+
+        if (hasAt) {
+            break;
+        } else {
+            printf("Invalid email address\n");
+        }
+    }
 
     string ip = getIP();
 

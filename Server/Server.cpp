@@ -8,8 +8,41 @@
 
 using std::string;
 
+// Client list structure
+struct Client {
+    string username;
+    string ip;
+    int socket;
+    bool online;
+};
+
+// Client list
+Client clients[100] = {};  
+
+int getFirstEmptySlot() {
+    for (int i = 0; i < 100; i++) {
+        if (clients[i].username == "") {
+            return i;
+        }
+    }
+
+    // No empty slots
+    return -1;
+}
+
+bool checkIfUserExists(string ip) {
+    for (int i = 0; i < 100; i++) {
+        if (clients[i].ip == ip) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void* clientHandler(void* arg) {
     pthread_t thisThread = pthread_self();
+    int clientSlot = -1;
     int clientSocket = *(int *) arg;
 
     printf("Thread %lu is handling client\n", thisThread);
@@ -23,9 +56,19 @@ void* clientHandler(void* arg) {
         if (readResult < 0) {
             printf("Thread %lu: Error reading from socket\n", thisThread);
             break;
+
         } else if (readResult == 0) {
             printf("Thread %lu: Client disconnected\n", thisThread);
+
+            if (clientSlot != -1) {
+                clients[clientSlot].username = "";
+                clients[clientSlot].ip = "";
+                clients[clientSlot].socket = 0;
+                clients[clientSlot].online = false;
+            }
+
             break;
+
         } else {
             chat::UserRequest newRequest;
             newRequest.ParseFromString((string)buffer);
@@ -33,6 +76,29 @@ void* clientHandler(void* arg) {
             if (newRequest.option() == 1) {
                 // User registration
                 printf("Thread %lu: User %s wants to register with IP %s\n", thisThread, newRequest.mutable_newuser() -> username().c_str(), newRequest.mutable_newuser() -> ip().c_str());
+
+                if (checkIfUserExists(newRequest.mutable_newuser() -> ip())) {
+                    printf("Thread %lu: User with IP %s already exists\n", thisThread, newRequest.mutable_newuser() -> ip().c_str());
+                    break;
+
+                } else {
+                    clientSlot = getFirstEmptySlot();
+
+                    printf("Thread %lu: Client slot: %d", thisThread, clientSlot);
+
+                    if (clientSlot == -1) {
+                        printf("Thread %lu: No empty slots\n", thisThread);
+                        break;
+                    }
+
+                    clients[clientSlot].username = newRequest.mutable_newuser() -> username();
+                    clients[clientSlot].ip = newRequest.mutable_newuser() -> ip();
+                    clients[clientSlot].socket = clientSocket;
+                    clients[clientSlot].online = true;
+
+                    printf("Thread %lu: User %s registered with IP %s\n", thisThread, clients[clientSlot].username.c_str(), clients[clientSlot].ip.c_str());
+                }
+
             } else if (newRequest.option() == 2) {
                 // User information request
             } else if (newRequest.option() == 3) {

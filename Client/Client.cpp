@@ -133,56 +133,75 @@ int main() {
     }
 
     bool running = true;
-    while (running) {
-        printf("1. Open global chat\n");
-        printf("2. Open private chat\n");
-        printf("3. Exit\n");
 
-        int choice;
-        scanf("%d", &choice);
+    int pid = fork();
 
-        switch (choice) {
-            case 1: {
-                int pid = fork();
-                bool running = true;
+    if (pid == 0) {
+        while (running) {
+            sleep(20);
 
-                if (pid == 0) {
-                    // while (running) {
-                    //     char buffer[1024] = {0};
-                    //     int readResult = read(serverSocket, buffer, 1024);
+            chat::UserRequest heartbeat;
+            heartbeat.set_option(5);
 
-                    //     printf("Message: %s\n", buffer);
-                    // }
-                } else {
-                    while (running) {
-                        char buffer[1024] = {0};
-                        printf("Enter message ('exit' to return to menu): ");
-                        scanf("%s", buffer);
+            string serialized;
+            heartbeat.SerializeToString(&serialized);
 
-                        if (strcmp(buffer, "exit") == 0) {
-                            running = false;
+            send(serverSocket, serialized.c_str(), serialized.length(), 0);
+        }
+    } else if (pid > 0) {
+        while (running) {
+            printf("1. Open global chat\n");
+            printf("2. Open private chat\n");
+            printf("3. Exit\n");
+
+            int choice;
+            scanf("%d", &choice);
+
+            switch (choice) {
+                case 1: {
+                    int pid = fork();
+                    bool running = true;
+
+                    if (pid == 0) {
+                        // while (running) {
+                        //     char buffer[1024] = {0};
+                        //     int readResult = read(serverSocket, buffer, 1024);
+
+                        //     printf("Message: %s\n", buffer);
+                        // }
+                    } else {
+                        while (running) {
+                            char buffer[1024] = {0};
+                            printf("Enter message ('exit' to return to menu): ");
+                            scanf("%s", buffer);
+
+                            if (strcmp(buffer, "exit") == 0) {
+                                running = false;
+                            }
+
+                            send(serverSocket, buffer, strlen(buffer), 0);
                         }
 
-                        send(serverSocket, buffer, strlen(buffer), 0);
+                        wait(NULL);
                     }
-
-                    wait(NULL);
+                }
+                case 2: {
+                    printf("Opening private chat\n");
+                    break;
+                }
+                case 3: {
+                    printf("Exiting\n");
+                    running = false;
+                    break;
+                }
+                default: {
+                    printf("Invalid choice\n");
+                    break;
                 }
             }
-            case 2: {
-                printf("Opening private chat\n");
-                break;
-            }
-            case 3: {
-                printf("Exiting\n");
-                running = false;
-                break;
-            }
-            default: {
-                printf("Invalid choice\n");
-                break;
-            }
         }
+
+        wait(NULL);
     }
 
     close(serverSocket);

@@ -4,7 +4,7 @@
 #include <netinet/in.h>
 #include <cstring>
 #include <sys/socket.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include "project.pb.h"
 
 using std::string;
@@ -144,7 +144,7 @@ void* clientHandler(void* arg) {
             } else if (newRequest.option() == 4) {
                 // New message
             } else if (newRequest.option() == 5) {
-                // Client hearbeat
+                printf("Thread %lu: Heartbeat received\n", thisThread);
             } else {
                 printf("Thread %lu: Unknown request\n", thisThread);
             }

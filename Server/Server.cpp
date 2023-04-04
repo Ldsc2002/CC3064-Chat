@@ -2,7 +2,11 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include <cstring>
 #include <sys/socket.h>
+#include "project.pb.h"
+
+using std::string;
 
 void* clientHandler(void* arg) {
     pthread_t thisThread = pthread_self();
@@ -22,7 +26,12 @@ void* clientHandler(void* arg) {
             printf("Client disconnected\n");
             break;
         } else {
-            printf("%lu --- Message received from client: %s\n", thisThread, buffer);
+            chat::UserRequest newRequest;
+            newRequest.ParseFromString((string)buffer);
+
+            if (newRequest.option() == 1) {
+                printf("User %s wants to register with IP %s\n", newRequest.mutable_newuser() -> username().c_str(), newRequest.mutable_newuser() -> ip().c_str());
+            }
         }
     }
 

@@ -5,6 +5,9 @@
 #include <arpa/inet.h>  
 #include <sys/socket.h>
 #include <cstring>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include "project.pb.h"
 
 using std::string;
 
@@ -48,6 +51,8 @@ string getIP() {
 }
 
 int main() {
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
+
     struct sockaddr_in serverAddress;
     int serverSocket;
     int serverPort;
@@ -100,7 +105,19 @@ int main() {
     printf("Client IP: %s\n", ip.c_str());
     printf("Email: %s\n", buffer);
 
-    while (true) {
+    chat::UserRequest newRegister;
+
+    newRegister.set_option(1);
+    newRegister.mutable_newuser() -> set_username(buffer);
+    newRegister.mutable_newuser() -> set_ip(ip);
+
+    string serialized;
+    newRegister.SerializeToString(&serialized);
+
+    send(serverSocket, serialized.c_str(), serialized.length(), 0);
+
+    bool running = true;
+    while (running) {
         printf("1. Open global chat\n");
         printf("2. Open private chat\n");
         printf("3. Exit\n");
@@ -142,6 +159,7 @@ int main() {
             }
             case 3: {
                 printf("Exiting\n");
+                running = false;
                 break;
             }
             default: {
@@ -153,6 +171,7 @@ int main() {
 
     close(serverSocket);
     shutdown(serverSocket, SHUT_RDWR);
+    google::protobuf::ShutdownProtobufLibrary();
 
     printf("Client is shutting down\n");
     return 0;

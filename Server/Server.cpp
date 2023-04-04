@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <cstring>
 #include <sys/socket.h>
+#include <wait.h>
 #include "project.pb.h"
 
 using std::string;
@@ -48,7 +49,34 @@ void* clientHandler(void* arg) {
     int readResult;
     
     while (true) {
-        readResult = read(clientSocket, buffer, 1024);
+        bool noHeartbeat = false;
+        int pid = fork();
+        
+        if (pid == 0) {
+            int timeInactive = 0;
+
+            while (true) {
+                sleep(10);
+                printf("Thread %lu: No heartbeat received - %d seconds\n", thisThread, timeInactive);
+                timeInactive += 10;
+
+                if (timeInactive >= 60) {
+                    close(clientSocket);
+                    noHeartbeat = true;
+                    break;
+                }
+            }
+
+        } else if (pid > 0) {
+            readResult = read(clientSocket, buffer, 1024);
+            kill(pid, SIGKILL); 
+            wait(NULL);
+        } 
+
+        if (noHeartbeat) {
+            printf("Thread %lu: Client disconnected due to inactivity\n", thisThread);
+            break;
+        }
 
         if (readResult < 0) {
             printf("Thread %lu: Error reading from socket\n", thisThread);
@@ -86,7 +114,7 @@ void* clientHandler(void* arg) {
                 } else {
                     clientSlot = getFirstEmptySlot();
 
-                    printf("Thread %lu: Client slot: %d", thisThread, clientSlot);
+                    printf("Thread %lu: Client slot: %d\n", thisThread, clientSlot);
 
                     if (clientSlot == -1) {
                         printf("Thread %lu: No empty slots\n", thisThread);

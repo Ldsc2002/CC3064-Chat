@@ -56,9 +56,9 @@ void* clientHandler(void* arg) {
             int timeInactive = 0;
 
             while (true) {
-                sleep(10);
-                printf("Thread %lu: No heartbeat received - %d seconds\n", thisThread, timeInactive);
+                sleep(10);                
                 timeInactive += 10;
+                printf("Thread %lu: No heartbeat received - %d seconds\n", thisThread, timeInactive);
 
                 if (timeInactive >= 60) {
                     close(clientSocket);

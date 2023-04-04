@@ -77,9 +77,14 @@ void* clientHandler(void* arg) {
                 // User registration
                 printf("Thread %lu: User %s wants to register with IP %s\n", thisThread, newRequest.mutable_newuser() -> username().c_str(), newRequest.mutable_newuser() -> ip().c_str());
 
+                chat::ServerResponse newResponse;
+                newResponse.set_option(1);
+                newResponse.set_code(400);
+                newResponse.set_servermessage("Error registering user");
+
                 if (checkIfUserExists(newRequest.mutable_newuser() -> ip())) {
                     printf("Thread %lu: User with IP %s already exists\n", thisThread, newRequest.mutable_newuser() -> ip().c_str());
-                    break;
+                    newResponse.set_servermessage("User with this IP already exists");
 
                 } else {
                     clientSlot = getFirstEmptySlot();
@@ -96,8 +101,16 @@ void* clientHandler(void* arg) {
                     clients[clientSlot].socket = clientSocket;
                     clients[clientSlot].online = true;
 
+                    newResponse.set_code(200);
+                    newResponse.set_servermessage("User registered");
+
                     printf("Thread %lu: User %s registered with IP %s\n", thisThread, clients[clientSlot].username.c_str(), clients[clientSlot].ip.c_str());
                 }
+
+                string responseString;
+                newResponse.SerializeToString(&responseString);
+
+                send(clientSocket, responseString.c_str(), responseString.length(), 0);
 
             } else if (newRequest.option() == 2) {
                 // User information request
@@ -117,6 +130,8 @@ void* clientHandler(void* arg) {
 }
 
 int main() {
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
+
     struct sockaddr_in serverAddress;
     int serverSocket;
     int serverPort;

@@ -116,6 +116,22 @@ int main() {
 
     send(serverSocket, serialized.c_str(), serialized.length(), 0);
 
+    int readResult = read(serverSocket, buffer, 1024);
+    if (readResult < 0) {
+        printf("Error reading from server\n");
+        return 1;
+    }
+
+    chat::ServerResponse response;
+    response.ParseFromString((string)buffer);
+
+    if (response.code() == 200) {
+        printf("Successfully registered\n");
+    } else {
+        printf("Error registering: %s\n", response.servermessage().c_str());
+        return 1;
+    }
+
     bool running = true;
     while (running) {
         printf("1. Open global chat\n");

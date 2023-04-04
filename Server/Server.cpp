@@ -8,7 +8,6 @@
 
 using std::string;
 
-// Client list structure
 struct Client {
     string username;
     string ip;
@@ -16,7 +15,6 @@ struct Client {
     bool online;
 };
 
-// Client list
 Client clients[100] = {};  
 
 int getFirstEmptySlot() {
@@ -26,7 +24,6 @@ int getFirstEmptySlot() {
         }
     }
 
-    // No empty slots
     return -1;
 }
 

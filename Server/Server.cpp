@@ -19,18 +19,30 @@ void* clientHandler(void* arg) {
     
     while (true) {
         readResult = read(clientSocket, buffer, 1024);
+
         if (readResult < 0) {
-            printf("Error reading from socket\n");
+            printf("Thread %lu: Error reading from socket\n", thisThread);
             break;
         } else if (readResult == 0) {
-            printf("Client disconnected\n");
+            printf("Thread %lu: Client disconnected\n", thisThread);
             break;
         } else {
             chat::UserRequest newRequest;
             newRequest.ParseFromString((string)buffer);
 
             if (newRequest.option() == 1) {
-                printf("User %s wants to register with IP %s\n", newRequest.mutable_newuser() -> username().c_str(), newRequest.mutable_newuser() -> ip().c_str());
+                // User registration
+                printf("Thread %lu: User %s wants to register with IP %s\n", thisThread, newRequest.mutable_newuser() -> username().c_str(), newRequest.mutable_newuser() -> ip().c_str());
+            } else if (newRequest.option() == 2) {
+                // User information request
+            } else if (newRequest.option() == 3) {
+                // Status change
+            } else if (newRequest.option() == 4) {
+                // New message
+            } else if (newRequest.option() == 5) {
+                // Client hearbeat
+            } else {
+                printf("Thread %lu: Unknown request\n", thisThread);
             }
         }
     }

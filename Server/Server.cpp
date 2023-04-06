@@ -279,6 +279,17 @@ void* clientHandler(void* arg) {
             } else if (newRequest.option() == 5) {
                 // Heartbeat
                 printf("Thread %lu: Heartbeat received\n", thisThread);
+
+                chat::ServerResponse newResponse;
+                newResponse.set_option(5);
+                newResponse.set_code(200);
+                newResponse.set_servermessage("Heartbeat received");
+
+                string responseString;
+                newResponse.SerializeToString(&responseString);
+
+                send(clientSocket, responseString.c_str(), responseString.length(), 0);
+                
             } else {
                 // Unknown request
                 printf("Thread %lu: Unknown request\n", thisThread);

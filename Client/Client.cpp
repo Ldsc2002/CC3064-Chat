@@ -190,6 +190,7 @@ int main() {
                     break;
                 }
                 case 3: {
+                    // TODO fix bug where client doesn't exit - running should be shared between processes
                     printf("Exiting\n");
                     running = false;
                     break;

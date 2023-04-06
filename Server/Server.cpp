@@ -143,6 +143,55 @@ void* clientHandler(void* arg) {
                 // Status change
             } else if (newRequest.option() == 4) {
                 // New message
+                string newMsg = newRequest.mutable_message() -> message();
+                string sender = newRequest.mutable_message() -> sender();
+                string recipient;
+
+                if (newRequest.mutable_message() -> message_type() == 1) {
+                    recipient = "all";
+                } else {
+                    recipient = newRequest.mutable_message() -> recipient();
+                }
+
+
+                bool online = false;
+                int recipientSlot = -1;
+                for (int i = 0; i < 100; i++) {
+                    if (clients[i].username == recipient && clients[i].online) {
+                        online = true;
+                        recipientSlot = i;
+                        break;
+                    }
+                }
+
+                if (online) {
+                    // TODO send message to recipient
+
+                    printf("Thread %lu: New message from %s to %s: %s\n", thisThread, sender.c_str(), recipient.c_str(), newMsg.c_str());
+
+                    chat::ServerResponse newResponse;
+                    newResponse.set_option(4);
+                    newResponse.set_code(200);
+                    newResponse.set_servermessage("Message sent");
+
+                    string responseString;
+                    newResponse.SerializeToString(&responseString);
+
+                    send(clientSocket, responseString.c_str(), responseString.length(), 0);
+                } else {
+                    printf("Thread %lu: User %s is offline\n", thisThread, recipient.c_str());
+
+                    chat::ServerResponse newResponse;
+                    newResponse.set_option(4);
+                    newResponse.set_code(400);
+                    newResponse.set_servermessage("User is offline");
+
+                    string responseString;
+                    newResponse.SerializeToString(&responseString);
+
+                    send(clientSocket, responseString.c_str(), responseString.length(), 0);
+                }
+
             } else if (newRequest.option() == 5) {
                 printf("Thread %lu: Heartbeat received\n", thisThread);
             } else {

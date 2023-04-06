@@ -139,15 +139,66 @@ void* clientHandler(void* arg) {
 
             } else if (newRequest.option() == 2) {
                 // User information request
+
+                if (newRequest.mutable_inforequest() -> type_request() == true) {
+                    // All users
+                    printf("Thread %lu: User %s wants to get all users\n", thisThread, clients[clientSlot].username.c_str());
+
+                    chat::ServerResponse newResponse;
+                    newResponse.set_option(2);
+                    newResponse.set_code(200);
+                    newResponse.set_servermessage("All users");
+
+                    for (int i = 0; i < 100; i++) {
+                        if (clients[i].username != "") {
+                            chat::UserInfo* newUser = newResponse.mutable_connectedusers() -> add_connectedusers();
+                            newUser -> set_username(clients[i].username);
+                            newUser -> set_ip(clients[i].ip);
+                            newUser -> set_status(clients[i].status);
+                        }
+                    }
+
+                    string responseString;
+                    newResponse.SerializeToString(&responseString);
+
+                    send(clientSocket, responseString.c_str(), responseString.length(), 0);
+
+                } else {
+                    // Single user
+                    printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), newRequest.mutable_inforequest() -> user().c_str());
+
+                    chat::ServerResponse newResponse;
+                    newResponse.set_option(2);
+                    newResponse.set_code(400);
+                    newResponse.set_servermessage("User not found");
+
+                    for (int i = 0; i < 100; i++) {
+                        if (clients[i].username == newRequest.mutable_inforequest() -> user()) {
+                            chat::UserInfo* newUser = newResponse.mutable_connectedusers() -> add_connectedusers();
+                            newUser -> set_username(clients[i].username);
+                            newUser -> set_ip(clients[i].ip);
+                            newUser -> set_status(clients[i].status);
+
+                            newResponse.set_code(200);
+                            newResponse.set_servermessage("User found");
+                            break;
+                        }
+                    }
+
+                    string responseString;
+                    newResponse.SerializeToString(&responseString);
+
+                    send(clientSocket, responseString.c_str(), responseString.length(), 0);
+                }
             } else if (newRequest.option() == 3) {
                 // Status change
                 for (int i = 0; i < 100; i++) {
-                    if (clients[i].username == newRequest.mutable_changestatus() -> username()) {
-                        clients[i].status = newRequest.mutable_changestatus() -> newstatus();
+                    if (clients[i].username == newRequest.mutable_status() -> username()) {
+                        clients[i].status = newRequest.mutable_status() -> newstatus();
                         break;
                     }
                 }
-                
+
             } else if (newRequest.option() == 4) {
                 // New message
                 string newMsg = newRequest.mutable_message() -> message();

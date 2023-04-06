@@ -13,7 +13,7 @@ struct Client {
     string username;
     string ip;
     int socket;
-    bool online;
+    int status;
 };
 
 Client clients[100] = {};  
@@ -89,7 +89,7 @@ void* clientHandler(void* arg) {
                 clients[clientSlot].username = "";
                 clients[clientSlot].ip = "";
                 clients[clientSlot].socket = 0;
-                clients[clientSlot].online = false;
+                clients[clientSlot].status = 0;
             }
 
             break;
@@ -124,7 +124,7 @@ void* clientHandler(void* arg) {
                     clients[clientSlot].username = newRequest.mutable_newuser() -> username();
                     clients[clientSlot].ip = newRequest.mutable_newuser() -> ip();
                     clients[clientSlot].socket = clientSocket;
-                    clients[clientSlot].online = true;
+                    clients[clientSlot].status = 1;
 
                     newResponse.set_code(200);
                     newResponse.set_servermessage("User registered");
@@ -141,13 +141,20 @@ void* clientHandler(void* arg) {
                 // User information request
             } else if (newRequest.option() == 3) {
                 // Status change
+                for (int i = 0; i < 100; i++) {
+                    if (clients[i].username == newRequest.mutable_changestatus() -> username()) {
+                        clients[i].status = newRequest.mutable_changestatus() -> newstatus();
+                        break;
+                    }
+                }
+                
             } else if (newRequest.option() == 4) {
                 // New message
                 string newMsg = newRequest.mutable_message() -> message();
                 string sender = newRequest.mutable_message() -> sender();
                 string recipient;
 
-                if (newRequest.mutable_message() -> message_type() == 1) {
+                if (newRequest.mutable_message() -> message_type() == true) {
                     recipient = "all";
                 } else {
                     recipient = newRequest.mutable_message() -> recipient();
@@ -157,7 +164,7 @@ void* clientHandler(void* arg) {
                 bool online = false;
                 int recipientSlot = -1;
                 for (int i = 0; i < 100; i++) {
-                    if (clients[i].username == recipient && clients[i].online) {
+                    if (clients[i].username == recipient && clients[i].status != 0) {
                         online = true;
                         recipientSlot = i;
                         break;
@@ -165,8 +172,6 @@ void* clientHandler(void* arg) {
                 }
 
                 if (online) {
-                    // TODO send message to recipient
-
                     printf("Thread %lu: New message from %s to %s: %s\n", thisThread, sender.c_str(), recipient.c_str(), newMsg.c_str());
 
                     chat::ServerResponse newResponse;
@@ -178,6 +183,34 @@ void* clientHandler(void* arg) {
                     newResponse.SerializeToString(&responseString);
 
                     send(clientSocket, responseString.c_str(), responseString.length(), 0);
+
+                    chat::ServerResponse sentMessage;
+                    sentMessage.set_option(4);
+                    sentMessage.set_code(200);
+                    sentMessage.set_servermessage("New message");
+                    sentMessage.mutable_message() -> set_message(newMsg);
+
+                    if (recipient == "all") {
+                        sentMessage.mutable_message() -> set_message_type(true);
+
+                        for (int i = 0; i < 100; i++) {
+                            if (clients[i].username != sender && clients[i].status != 0) {
+                                send(clients[i].socket, responseString.c_str(), responseString.length(), 0);
+                            }
+                        }
+                    } else {
+                        sentMessage.mutable_message() -> set_message_type(false);
+                        sentMessage.mutable_message() -> set_sender(sender);
+                        sentMessage.mutable_message() -> set_recipient(recipient);
+
+                        for (int i = 0; i < 100; i++) {
+                            if (clients[i].username == sender) {
+                                send(clients[i].socket, responseString.c_str(), responseString.length(), 0);
+                                break;
+                            }
+                        }
+                    }
+
                 } else {
                     printf("Thread %lu: User %s is offline\n", thisThread, recipient.c_str());
 
@@ -193,8 +226,10 @@ void* clientHandler(void* arg) {
                 }
 
             } else if (newRequest.option() == 5) {
+                // Heartbeat
                 printf("Thread %lu: Heartbeat received\n", thisThread);
             } else {
+                // Unknown request
                 printf("Thread %lu: Unknown request\n", thisThread);
             }
         }

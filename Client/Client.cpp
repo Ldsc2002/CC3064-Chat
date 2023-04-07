@@ -7,6 +7,7 @@
 #include <cstring>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include "project.pb.h"
 
 using std::string;
@@ -133,12 +134,13 @@ int main() {
         return 1;
     }
 
-    bool running = true;
+    bool* running = (bool*)mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    *running = true;
 
     int pid = fork();
 
     if (pid == 0) {
-        while (running) {
+        while (*running) {
             sleep(20);
 
             chat::UserRequest heartbeat;
@@ -150,8 +152,10 @@ int main() {
             send(serverSocket, serialized.c_str(), serialized.length(), 0);
         }
 
+        return 0;
+
     } else if (pid > 0) {
-        while (running) {
+        while (*running) {
             printf("1. Send private message\n");
             printf("2. Send public message\n");
             printf("3. Get list of users\n");
@@ -275,9 +279,8 @@ int main() {
                 }
 
                 case 4: {
-                    // TODO fix bug where client doesn't exit - running should be shared between processes
-                    printf("Exiting\n");
-                    running = false;
+                    printf("Exiting... Please wait\n");
+                    *running = false;
                     break;
                 }
 
@@ -296,5 +299,6 @@ int main() {
     google::protobuf::ShutdownProtobufLibrary();
 
     printf("Client is shutting down\n");
+    munmap(&running, sizeof(bool));
     return 0;
 }

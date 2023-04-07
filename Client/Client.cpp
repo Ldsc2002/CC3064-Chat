@@ -101,6 +101,7 @@ int main() {
     }
 
     string ip = getIP();
+    string username = (string)buffer;
 
     printf("Client IP: %s\n", ip.c_str());
     printf("Email: %s\n", buffer);
@@ -148,53 +149,138 @@ int main() {
 
             send(serverSocket, serialized.c_str(), serialized.length(), 0);
         }
+
     } else if (pid > 0) {
         while (running) {
-            printf("1. Open global chat\n");
-            printf("2. Open private chat\n");
-            printf("3. Exit\n");
+            printf("1. Send private message\n");
+            printf("2. Send public message\n");
+            printf("3. Get list of users\n");
+            printf("4. Exit\n");
 
             int choice;
             scanf("%d", &choice);
 
             switch (choice) {
                 case 1: {
-                    int pid = fork();
-                    bool running = true;
+                    string recipient;
+                    string message;
 
-                    if (pid == 0) {
-                        // while (running) {
-                        //     char buffer[1024] = {0};
-                        //     int readResult = read(serverSocket, buffer, 1024);
+                    printf("Enter recipient: ");
+                    scanf("%s", buffer);
+                    recipient = (string)buffer;
 
-                        //     printf("Message: %s\n", buffer);
-                        // }
-                    } else {
-                        while (running) {
-                            char buffer[1024] = {0};
-                            printf("Enter message ('exit' to return to menu): ");
-                            scanf("%s", buffer);
+                    printf("Enter message: ");
+                    scanf("%s", buffer);
+                    message = (string)buffer;
 
-                            if (strcmp(buffer, "exit") == 0) {
-                                running = false;
-                            }
+                    chat::UserRequest privateMessage;
+                    privateMessage.set_option(4);
+                    privateMessage.mutable_message() -> set_recipient(recipient);
+                    privateMessage.mutable_message() -> set_message(message);
+                    privateMessage.mutable_message() -> set_message_type(false);
+                    privateMessage.mutable_message() -> set_sender(username);
 
-                            send(serverSocket, buffer, strlen(buffer), 0);
-                        }
+                    string serialized;
+                    privateMessage.SerializeToString(&serialized);
 
-                        wait(NULL);
+                    send(serverSocket, serialized.c_str(), serialized.length(), 0);
+
+                    readResult = read(serverSocket, buffer, 1024);
+
+                    if (readResult < 0) {
+                        printf("Error reading from server\n");
+                        return 1;
                     }
-                }
-                case 2: {
-                    printf("Opening private chat\n");
+
+                    chat::ServerResponse response;
+                    response.ParseFromString((string)buffer);
+
+                    if (response.code() == 200) {
+                        printf("Success: %s\n", response.servermessage().c_str());
+                    } else {
+                        printf("Error: %s\n", response.servermessage().c_str());
+                    }
+
                     break;
                 }
+
+                case 2: {
+                    string message;
+
+                    printf("Enter message: ");
+                    scanf("%s", buffer);
+                    message = (string)buffer;
+
+                    chat::UserRequest publicMessage;
+                    publicMessage.set_option(4);
+                    publicMessage.mutable_message() -> set_message(message);
+                    publicMessage.mutable_message() -> set_message_type(true);
+                    publicMessage.mutable_message() -> set_sender(username);
+
+                    string serialized;
+                    publicMessage.SerializeToString(&serialized);
+
+                    send(serverSocket, serialized.c_str(), serialized.length(), 0);
+
+                    readResult = read(serverSocket, buffer, 1024);
+
+                    if (readResult < 0) {
+                        printf("Error reading from server\n");
+                        return 1;
+                    }
+
+                    chat::ServerResponse response;
+                    response.ParseFromString((string)buffer);
+
+                    if (response.code() == 200) {
+                        printf("Success: %s\n", response.servermessage().c_str());
+                    } else {
+                        printf("Error: %s\n", response.servermessage().c_str());
+                    }
+
+                    break;
+                }
+
                 case 3: {
+                    chat::UserRequest userList;
+                    userList.set_option(2);
+
+                    userList.mutable_inforequest() -> set_type_request(true);
+
+                    string serialized;
+                    userList.SerializeToString(&serialized);
+
+                    send(serverSocket, serialized.c_str(), serialized.length(), 0);
+
+                    readResult = read(serverSocket, buffer, 1024);
+
+                    if (readResult < 0) {
+                        printf("Error reading from server\n");
+                        return 1;
+                    }
+
+                    chat::ServerResponse response;
+                    response.ParseFromString((string)buffer);
+
+                    if (response.code() == 200) {
+                        printf("Success: %s\n", response.servermessage().c_str());
+                        for (int i = 0; i < response.mutable_connectedusers() -> connectedusers_size(); i++) {
+                            printf("%s\n", response.mutable_connectedusers() -> connectedusers(i).username().c_str());
+                        }
+                    } else {
+                        printf("Error: %s\n", response.servermessage().c_str());
+                    }
+
+                    break;
+                }
+
+                case 4: {
                     // TODO fix bug where client doesn't exit - running should be shared between processes
                     printf("Exiting\n");
                     running = false;
                     break;
                 }
+
                 default: {
                     printf("Invalid choice\n");
                     break;

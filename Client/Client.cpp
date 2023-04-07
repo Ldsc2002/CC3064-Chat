@@ -140,16 +140,22 @@ int main() {
     int pid = fork();
 
     if (pid == 0) {
+        int sleepTime = 0;
+
         while (*running) {
-            sleep(20);
+            sleep(1);
+            sleepTime++;
 
-            chat::UserRequest heartbeat;
-            heartbeat.set_option(5);
+            if (sleepTime == 20) {
+                chat::UserRequest heartbeat;
+                heartbeat.set_option(5);
 
-            string serialized;
-            heartbeat.SerializeToString(&serialized);
+                string serialized;
+                heartbeat.SerializeToString(&serialized);
 
-            send(serverSocket, serialized.c_str(), serialized.length(), 0);
+                send(serverSocket, serialized.c_str(), serialized.length(), 0);
+                sleepTime = 0;
+            }
         }
 
         return 0;

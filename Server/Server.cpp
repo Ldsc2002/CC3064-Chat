@@ -75,6 +75,14 @@ void* clientHandler(void* arg) {
 
         if (noHeartbeat) {
             printf("Thread %lu: Client disconnected due to inactivity\n", thisThread);
+
+            if (clientSlot != -1) {
+                clients[clientSlot].username = "";
+                clients[clientSlot].ip = "";
+                clients[clientSlot].socket = 0;
+                clients[clientSlot].status = 0;
+            }
+            
             break;
         }
 
@@ -289,7 +297,7 @@ void* clientHandler(void* arg) {
                 newResponse.SerializeToString(&responseString);
 
                 send(clientSocket, responseString.c_str(), responseString.length(), 0);
-                
+
             } else {
                 // Unknown request
                 printf("Thread %lu: Unknown request\n", thisThread);

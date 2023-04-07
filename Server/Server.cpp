@@ -28,9 +28,9 @@ int getFirstEmptySlot() {
     return -1;
 }
 
-bool checkIfUserExists(string ip) {
+bool checkIfUserExists(string ip, string email) {
     for (int i = 0; i < 100; i++) {
-        if (clients[i].ip == ip) {
+        if (clients[i].ip == ip || clients[i].username == email) {
             return true;
         }
     }
@@ -115,9 +115,9 @@ void* clientHandler(void* arg) {
                 newResponse.set_code(400);
                 newResponse.set_servermessage("Error registering user");
 
-                if (checkIfUserExists(newRequest.mutable_newuser() -> ip())) {
-                    printf("Thread %lu: User with IP %s already exists\n", thisThread, newRequest.mutable_newuser() -> ip().c_str());
-                    newResponse.set_servermessage("User with this IP already exists");
+                if (checkIfUserExists(newRequest.mutable_newuser() -> ip(), newRequest.mutable_newuser() -> username())) {
+                    printf("Thread %lu: User with IP %s or email %s already exists\n", thisThread, newRequest.mutable_newuser() -> ip().c_str(), newRequest.mutable_newuser() -> username().c_str());
+                    newResponse.set_servermessage("User with this IP or Email already exists");
 
                 } else {
                     clientSlot = getFirstEmptySlot();
@@ -171,8 +171,10 @@ void* clientHandler(void* arg) {
 
                     send(clientSocket, responseString.c_str(), responseString.length(), 0);
 
-                } else {
+                } else if (newRequest.mutable_inforequest() -> type_request() == false) {
                     // Single user
+                    string email_to_find = newRequest.mutable_inforequest() -> user();
+
                     printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), newRequest.mutable_inforequest() -> user().c_str());
 
                     chat::ServerResponse newResponse;
@@ -182,11 +184,14 @@ void* clientHandler(void* arg) {
 
                     for (int i = 0; i < 100; i++) {
                         if (clients[i].username == newRequest.mutable_inforequest() -> user()) {
+
+                            printf("Thread %lu: User %s found\n", thisThread, clients[i].username.c_str());
+
                             chat::UserInfo* newUser = newResponse.mutable_connectedusers() -> add_connectedusers();
                             newUser -> set_username(clients[i].username);
                             newUser -> set_ip(clients[i].ip);
                             newUser -> set_status(clients[i].status);
-
+                            
                             newResponse.set_code(200);
                             newResponse.set_servermessage("User found");
                             break;

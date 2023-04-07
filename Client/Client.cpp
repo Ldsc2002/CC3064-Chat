@@ -67,7 +67,7 @@ int main() {
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, "3.84.254.159", &serverAddress.sin_addr) <= 0) {
         printf("Error converting address\n");
         return 1;
     }
@@ -81,7 +81,7 @@ int main() {
     char buffer[1024] = {0};
 
     while (true) {
-        buffer[1024] = {0};
+        buffer[1023] = {0};
 
         printf("Enter enter email address: ");
         scanf("%s", buffer);
@@ -203,8 +203,11 @@ int main() {
             while (*running) {
                 printf("1. Send private message\n");
                 printf("2. Send public message\n");
-                printf("3. Get list of users\n");
-                printf("4. Exit\n");
+                printf("3. Change status\n");
+                printf("4. Get list of users\n");
+                printf("5. Get information about user\n");
+                printf("6. Help\n");
+                printf("7. Exit\n");
 
                 int choice;
                 scanf("%d", &choice);
@@ -259,6 +262,10 @@ int main() {
                     }
 
                     case 3: {
+                        break;
+                    }
+
+                    case 4: {
                         chat::UserRequest userList;
                         userList.set_option(2);
 
@@ -272,7 +279,38 @@ int main() {
                         break;
                     }
 
-                    case 4: {
+                    case 5: {
+                        string recipient;
+
+                        printf("Enter recipient: ");
+                        scanf("%s", buffer);
+                        recipient = (string)buffer;
+
+                        chat::UserRequest userInfo;
+                        userInfo.set_option(2);
+
+                        userInfo.mutable_inforequest() -> set_type_request(false);
+                        userInfo.mutable_inforequest() -> set_user(recipient);
+
+                        string serialized;
+                        userInfo.SerializeToString(&serialized);
+
+                        send(serverSocket, serialized.c_str(), serialized.length(), 0);
+
+                        break;
+                    }
+
+                    case 6: {
+                        printf("- In order to send a private message, enter '1' and then you must enter the recipient's email and the message you want to send\n");
+                        printf("- In order to send a public message, enter '2' and then you must enter the message you want to send\n");
+                        printf("- In order to change your status, enter '3' and then you must enter the number of the status you want to change to\n");
+                        printf("- In order to get a list of users, enter '4'\n");
+                        printf("- In order to get information about a user, enter '5' and then you must enter the user's email\n");
+                        printf("- In order to exit, enter '7'\n\n");
+                        break;
+                    }
+
+                    case 7: {
                         printf("Exiting... Please wait\n");
                         *running = false;
                         break;

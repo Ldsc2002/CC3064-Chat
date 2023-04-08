@@ -173,9 +173,9 @@ void* clientHandler(void* arg) {
 
                 } else if (newRequest.mutable_inforequest() -> type_request() == false) {
                     // Single user
-                    string email_to_find = newRequest.mutable_inforequest() -> user();
+                    string userSearch = newRequest.mutable_inforequest() -> user();
 
-                    printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), newRequest.mutable_inforequest() -> user().c_str());
+                    printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), userSearch);
 
                     chat::ServerResponse newResponse;
                     newResponse.set_option(2);
@@ -183,8 +183,7 @@ void* clientHandler(void* arg) {
                     newResponse.set_servermessage("User not found");
 
                     for (int i = 0; i < 100; i++) {
-                        if (clients[i].username == newRequest.mutable_inforequest() -> user()) {
-
+                        if (clients[i].username == userSearch) {
                             printf("Thread %lu: User %s found\n", thisThread, clients[i].username.c_str());
 
                             chat::UserInfo* newUser = newResponse.mutable_connectedusers() -> add_connectedusers();

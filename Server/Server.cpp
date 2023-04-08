@@ -254,12 +254,15 @@ void* clientHandler(void* arg) {
                     sentMessage.set_servermessage("New message");
                     sentMessage.mutable_message() -> set_message(newMsg);
 
+                    string sentMsg;
+                    sentMessage.SerializeToString(&sentMsg);
+
                     if (recipient == "all") {
                         sentMessage.mutable_message() -> set_message_type(true);
 
                         for (int i = 0; i < 100; i++) {
                             if (clients[i].username != sender && clients[i].status != 0) {
-                                send(clients[i].socket, responseString.c_str(), responseString.length(), 0);
+                                send(clients[i].socket, sentMsg.c_str(), sentMsg.length(), 0);
                             }
                         }
                     } else {
@@ -269,7 +272,7 @@ void* clientHandler(void* arg) {
 
                         for (int i = 0; i < 100; i++) {
                             if (clients[i].username == sender) {
-                                send(clients[i].socket, responseString.c_str(), responseString.length(), 0);
+                                send(clients[i].socket, sentMsg.c_str(), sentMsg.length(), 0);
                                 break;
                             }
                         }

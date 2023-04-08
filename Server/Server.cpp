@@ -228,7 +228,7 @@ void* clientHandler(void* arg) {
                 bool online = false;
                 int recipientSlot = -1;
                 for (int i = 0; i < 100; i++) {
-                    if (clients[i].username == recipient && clients[i].status != 0) {
+                    if (clients[i].username == recipient) {
                         online = true;
                         recipientSlot = i;
                         break;

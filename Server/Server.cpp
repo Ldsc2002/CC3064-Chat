@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
+#include <fcntl.h>
 #include "project.pb.h"
 
 using std::string;
@@ -50,11 +51,15 @@ void* clientHandler(void* arg) {
     int readResult;
 
     bool* reading = (bool*)mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    
+    bool* noHeartbeat = (bool*)mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+    int flags = fcntl(clientSocket, F_GETFL, 0);
+    fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
+
     while (true) {
         buffer[1024] = {0};
 
-        bool noHeartbeat = false;
+        *noHeartbeat = false;
         *reading = true;
         int pid = fork();
         
@@ -71,7 +76,7 @@ void* clientHandler(void* arg) {
 
                 if (timeInactive >= 60) {
                     close(clientSocket);
-                    noHeartbeat = true;
+                    *noHeartbeat = true;
                     break;
                 }
             }
@@ -79,12 +84,17 @@ void* clientHandler(void* arg) {
             return 0;
 
         } else if (pid > 0) {
-            readResult = read(clientSocket, buffer, 1024);
+            readResult = -1;
+
+            while(readResult == -1 && !*noHeartbeat) {
+                readResult = read(clientSocket, buffer, 1024);
+            }
+
             *reading = false;
             wait(NULL);
         } 
 
-        if (noHeartbeat) {
+        if (*noHeartbeat) {
             printf("Thread %lu: Client disconnected due to inactivity\n", thisThread);
 
             if (clientSlot != -1) {
@@ -185,7 +195,7 @@ void* clientHandler(void* arg) {
                 } else if (newRequest.mutable_inforequest() -> type_request() == false) {
                     // Single user
                     // TODO fix this
-                    string userSearch = newRequest.mutable_inforequest() -> user();
+                    string userSearch = newRequest.mutable_inforequest() -> user().c_str();
 
                     printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), userSearch);
 
@@ -328,6 +338,8 @@ void* clientHandler(void* arg) {
     }
 
     munmap(&reading, sizeof(bool));
+    munmap(&noHeartbeat, sizeof(bool));
+    
     pthread_exit(NULL);
 }
 

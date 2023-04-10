@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
+#include <fcntl.h>
 #include "project.pb.h"
 
 using std::string;
@@ -135,6 +136,9 @@ int main() {
         return 1;
     }
 
+    int flags = fcntl(serverSocket, F_GETFL, 0);
+    fcntl(serverSocket, F_SETFL, flags | O_NONBLOCK);
+
     bool* running = (bool*)mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     *running = true;
 
@@ -166,10 +170,13 @@ int main() {
 
         if (pid2 == 0) {
             while (*running) {
-                // TODO fix gets hung reading while exiting
-                int readResult = read(serverSocket, buffer, 1024);
+                readResult = -1;
 
-                if (readResult < 0) {
+                while(readResult == -1 && *running) {
+                    readResult = read(serverSocket, buffer, 1024);
+                }
+
+                if (readResult < 0 && *running) {
                     printf("Error reading from server\n");
                     return 1;
                 }

@@ -184,6 +184,7 @@ void* clientHandler(void* arg) {
 
                 } else if (newRequest.mutable_inforequest() -> type_request() == false) {
                     // Single user
+                    // TODO fix this
                     string userSearch = newRequest.mutable_inforequest() -> user();
 
                     printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), userSearch);
@@ -263,12 +264,14 @@ void* clientHandler(void* arg) {
                     sentMessage.set_code(200);
                     sentMessage.set_servermessage("New message");
                     sentMessage.mutable_message() -> set_message(newMsg);
+                    sentMessage.mutable_message() -> set_sender(sender);
 
                     string sentMsg;
-                    sentMessage.SerializeToString(&sentMsg);
 
                     if (recipient == "all") {
                         sentMessage.mutable_message() -> set_message_type(true);
+                        
+                        sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
                             if (clients[i].username != sender && clients[i].status != 0) {
@@ -277,8 +280,9 @@ void* clientHandler(void* arg) {
                         }
                     } else {
                         sentMessage.mutable_message() -> set_message_type(false);
-                        sentMessage.mutable_message() -> set_sender(sender);
                         sentMessage.mutable_message() -> set_recipient(recipient);
+
+                        sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
                             if (clients[i].username == sender) {

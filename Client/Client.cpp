@@ -166,6 +166,7 @@ int main() {
 
         if (pid2 == 0) {
             while (*running) {
+                // TODO fix gets hung reading while exiting
                 int readResult = read(serverSocket, buffer, 1024);
 
                 if (readResult < 0) {

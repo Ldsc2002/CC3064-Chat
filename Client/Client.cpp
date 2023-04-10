@@ -291,7 +291,7 @@ int main() {
                     case 5: {
                         string recipient;
 
-                        printf("Enter recipient: ");
+                        printf("Enter user: ");
                         scanf("%s", buffer);
                         recipient = (string)buffer;
 

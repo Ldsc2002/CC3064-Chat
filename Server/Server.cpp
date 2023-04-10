@@ -194,10 +194,9 @@ void* clientHandler(void* arg) {
 
                 } else if (newRequest.mutable_inforequest() -> type_request() == false) {
                     // Single user
-                    // TODO fix this
-                    string userSearch = newRequest.mutable_inforequest() -> user().c_str();
+                    string userSearch = newRequest.mutable_inforequest() -> user();
 
-                    printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), userSearch);
+                    printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), userSearch.c_str());
 
                     chat::ServerResponse newResponse;
                     newResponse.set_option(2);

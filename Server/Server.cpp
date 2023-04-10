@@ -5,6 +5,7 @@
 #include <cstring>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include "project.pb.h"
 
 using std::string;
@@ -47,18 +48,26 @@ void* clientHandler(void* arg) {
 
     char buffer[1024] = {0};
     int readResult;
+
+    bool* reading = (bool*)mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     
     while (true) {
+        buffer[1024] = {0};
+
         bool noHeartbeat = false;
+        *reading = true;
         int pid = fork();
         
         if (pid == 0) {
             int timeInactive = 0;
 
-            while (true) {
-                sleep(10);                
-                timeInactive += 10;
-                printf("Thread %lu: No heartbeat received - %d seconds\n", thisThread, timeInactive);
+            while (*reading) {
+                sleep(1);                
+                timeInactive += 1;
+
+                if (timeInactive % 10 == 0) {
+                    printf("Thread %lu: No heartbeat received - %d seconds\n", thisThread, timeInactive);
+                }
 
                 if (timeInactive >= 60) {
                     close(clientSocket);
@@ -67,9 +76,11 @@ void* clientHandler(void* arg) {
                 }
             }
 
+            return 0;
+
         } else if (pid > 0) {
             readResult = read(clientSocket, buffer, 1024);
-            kill(pid, SIGKILL); 
+            *reading = false;
             wait(NULL);
         } 
 
@@ -312,6 +323,7 @@ void* clientHandler(void* arg) {
         }
     }
 
+    munmap(&reading, sizeof(bool));
     pthread_exit(NULL);
 }
 

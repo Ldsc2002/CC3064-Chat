@@ -67,7 +67,8 @@ int main() {
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    if (inet_pton(AF_INET, "3.84.254.159", &serverAddress.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
+    // if (inet_pton(AF_INET, "3.84.254.159", &serverAddress.sin_addr) <= 0) {
         printf("Error converting address\n");
         return 1;
     }
@@ -81,7 +82,7 @@ int main() {
     char buffer[1024] = {0};
 
     while (true) {
-        buffer[1023] = {0};
+        buffer[1024] = {0};
 
         printf("Enter enter email address: ");
         scanf("%s", buffer);
@@ -150,10 +151,10 @@ int main() {
                 chat::UserRequest heartbeat;
                 heartbeat.set_option(5);
 
-                string serialized;
-                heartbeat.SerializeToString(&serialized);
+                string serializedHeartbeat;
+                heartbeat.SerializeToString(&serializedHeartbeat);
 
-                send(serverSocket, serialized.c_str(), serialized.length(), 0);
+                send(serverSocket, serializedHeartbeat.c_str(), serializedHeartbeat.length(), 0);
                 sleepTime = 0;
             }
         }
@@ -322,8 +323,8 @@ int main() {
                     }
                 }
             }
+            wait(NULL);
         }
-
         wait(NULL);
     }
 

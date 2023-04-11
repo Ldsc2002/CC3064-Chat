@@ -225,7 +225,19 @@ int main(int argc, char** argv) {
             return 0;
 
         } else if (pid2 > 0) {
+            int statusCode = 1;
+            string statusMessage = "Active";
+
             while (*running) {
+                if (statusCode == 1) {
+                    statusMessage = "Activo";
+                } else if (statusCode == 2) {
+                    statusMessage = "Ocupado";
+                } else if (statusCode == 3) {
+                    statusMessage = "Inactivo";
+                }
+
+                printf("Status: %s\n", statusMessage.c_str());
                 printf("1. Send private message\n");
                 printf("2. Send public message\n");
                 printf("3. Change status\n");
@@ -302,6 +314,8 @@ int main(int argc, char** argv) {
                             printf("Invalid status\n");
                             break;
                         }
+
+                        statusCode = status;
 
                         chat::UserRequest statusChange;
                         statusChange.set_option(3);

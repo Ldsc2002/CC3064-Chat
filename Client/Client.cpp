@@ -14,6 +14,7 @@
 #define BUFFERSIZE 2048
 
 using std::string;
+using namespace std;
 
 string getIP() {
     const char* dnsServer = "8.8.8.8";
@@ -302,10 +303,10 @@ int main(int argc, char** argv) {
                     }
 
                     case 5: {
-                        std::string recipient;
-                        printf("Enter user: ");
-                        std::cin >> recipient;
-                        recipient.push_back('\0');
+                        string recipient;
+
+                        cout << "Enter recipient: " << endl;
+                        cin >> recipient;
 
                         chat::UserRequest userInfo;
                         userInfo.set_option(2);
@@ -322,7 +323,7 @@ int main(int argc, char** argv) {
 
                         const void *dataPtr = static_cast<const void*>(serialized.data());
 
-                        send(serverSocket, dataPtr, serialized.length(), 1);
+                        send(serverSocket, dataPtr, serialized.size(), 0);
 
                         break;
                     }

@@ -203,7 +203,6 @@ void* clientHandler(void* arg) {
                 } else if (type_request == false) {
                     // Single user
                     std::string userSearch = newRequest.inforequest().user();
-                    userSearch.pop_back();
 
                     printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), userSearch.c_str());
 

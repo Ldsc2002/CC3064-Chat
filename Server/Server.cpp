@@ -232,13 +232,36 @@ void* clientHandler(void* arg) {
                     send(clientSocket, responseString.c_str(), responseString.length(), 0);
                 }
             } else if (newRequest.option() == 3) {
+                bool success = false;
                 // Status change
                 for (int i = 0; i < 100; i++) {
                     if (clients[i].username == newRequest.mutable_status() -> username()) {
                         clients[i].status = newRequest.mutable_status() -> newstatus();
+                        success = true;
                         break;
                     }
                 }
+                
+                chat::ServerResponse newResponse;
+                newResponse.set_option(3);
+
+                if (success) {
+                    printf("Thread %lu: User %s changed status to %d\n", thisThread, newRequest.mutable_status() -> username().c_str(), newRequest.mutable_status() -> newstatus());
+
+                    newResponse.set_code(200);
+                    newResponse.set_servermessage("Status changed");
+
+                } else {
+                    printf("Thread %lu: User %s not found\n", thisThread, newRequest.mutable_status() -> username().c_str());
+
+                    newResponse.set_code(400);
+                    newResponse.set_servermessage("User not found");
+                }
+
+                string responseString;
+                newResponse.SerializeToString(&responseString);
+
+                send(clientSocket, responseString.c_str(), responseString.length(), 0);
 
             } else if (newRequest.option() == 4) {
                 // New message

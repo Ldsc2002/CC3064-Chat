@@ -201,6 +201,8 @@ int main(int argc, char** argv) {
                         for (int i = 0; i < response.mutable_connectedusers() -> connectedusers_size(); i++) {
                             printf("%s: %s\n", response.mutable_connectedusers() -> connectedusers(i).username().c_str(), response.mutable_connectedusers() -> connectedusers(i).ip().c_str());
                         }
+                    } else if (response.option() == 3) {
+                        printf("Success: %s\n", response.servermessage().c_str());
                     } else if (response.option() == 4) {
 
                         printf("Mensaje Debug:\n%s\n", response.DebugString().c_str());
@@ -288,6 +290,29 @@ int main(int argc, char** argv) {
                     }
 
                     case 3: {
+                        printf("Enter status:\n");
+                        printf("1. Activo\n");
+                        printf("2. Ocupado\n");
+                        printf("3. Inactivo\n");
+
+                        int status;
+                        scanf("%d", &status);
+
+                        if (status < 1 || status > 3) {
+                            printf("Invalid status\n");
+                            break;
+                        }
+
+                        chat::UserRequest statusChange;
+                        statusChange.set_option(3);
+                        statusChange.mutable_status() -> set_newstatus(status);
+                        statusChange.mutable_status() -> set_username(username);
+
+                        string serialized;
+                        statusChange.SerializeToString(&serialized);
+
+                        send(serverSocket, serialized.c_str(), serialized.length(), 0);
+
                         break;
                     }
 

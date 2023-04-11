@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
                     if (response.option() == 2) {
                         printf("Success: %s\n", response.servermessage().c_str());
                         for (int i = 0; i < response.mutable_connectedusers() -> connectedusers_size(); i++) {
-                            printf("%s\n", response.mutable_connectedusers() -> connectedusers(i).username().c_str());
+                            printf("%s: %s\n", response.mutable_connectedusers() -> connectedusers(i).username().c_str(), response.mutable_connectedusers() -> connectedusers(i).ip().c_str());
                         }
                     } else if (response.option() == 4) {
                         if (response.has_message()) {

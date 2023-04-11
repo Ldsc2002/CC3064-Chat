@@ -213,7 +213,7 @@ void* clientHandler(void* arg) {
                     newResponse.set_servermessage("User not found");
 
                     for (int i = 0; i < 100; i++) {
-                        if (clients[i].username == userSearch) {
+                        if (strcmp(clients[i].username.c_str(), userSearch.c_str()) == 0) {
                             printf("Thread %lu: User %s found\n", thisThread, clients[i].username.c_str());
 
                             chat::UserInfo* newUser = newResponse.mutable_connectedusers() -> add_connectedusers();

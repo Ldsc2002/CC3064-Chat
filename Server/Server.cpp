@@ -279,7 +279,7 @@ void* clientHandler(void* arg) {
                 bool online = false;
                 int recipientSlot = -1;
                 for (int i = 0; i < 100; i++) {
-                    if (clients[i].username == recipient) {
+                    if (strcmp(clients[i].username.c_str(), recipient.c_str()) == 0) {
                         online = true;
                         recipientSlot = i;
                         break;

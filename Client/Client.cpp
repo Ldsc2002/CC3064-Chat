@@ -302,13 +302,17 @@ int main(int argc, char** argv) {
                         chat::UserRequest userInfo;
                         userInfo.set_option(2);
 
-                        userInfo.mutable_inforequest() -> set_type_request(false);
-                        userInfo.mutable_inforequest() -> set_user(recipient);
+                        // Initialize the "inforequest" field before setting the value of the "user" field
+                        chat::UserInfoRequest* infoRequest = userInfo.mutable_inforequest();
+                        infoRequest->set_type_request(false);
+                        infoRequest->set_user(recipient);
 
                         std::string serialized;
-                        userInfo.SerializeToString(&serialized);          
+                        userInfo.SerializeToString(&serialized);
 
-                        send(serverSocket, serialized.c_str(), serialized.length(), 0);
+                        const void *dataPtr = static_cast<const void*>(serialized.data());
+
+                        send(serverSocket, dataPtr, serialized.length(), 1);
 
                         break;
                     }

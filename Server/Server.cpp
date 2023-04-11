@@ -124,18 +124,11 @@ void* clientHandler(void* arg) {
             break;
 
         } else {
-            std::string newStr(buffer);
-
             chat::UserRequest newRequest;
-            newRequest.ParseFromString((string)newStr);
+            newRequest.ParseFromArray(buffer, 1024);
 
-            std::cout << "Received UserRequest:\n" << newRequest.DebugString() << std::endl;
+            printf("Received UserRequest:\n%s\n", newRequest.DebugString().c_str());
 
-            printf("Option: %d", newRequest.option());
-            printf(" Type: %d", newRequest.mutable_inforequest() -> type_request());
-            printf(" Username: %s ", newRequest.mutable_inforequest() -> user().c_str());
-
-            newStr.clear(); // Clears the content of the string
 
             if (newRequest.option() == 1) {
                 // User registration

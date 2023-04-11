@@ -129,9 +129,13 @@ void* clientHandler(void* arg) {
             chat::UserRequest newRequest;
             newRequest.ParseFromString((string)newStr);
 
+            std::cout << "Received UserRequest:\n" << newRequest.DebugString() << std::endl;
+
             printf("Option: %d", newRequest.option());
             printf(" Type: %d", newRequest.mutable_inforequest() -> type_request());
             printf(" Username: %s ", newRequest.mutable_inforequest() -> user().c_str());
+
+            newStr.clear(); // Clears the content of the string
 
             if (newRequest.option() == 1) {
                 // User registration
@@ -201,7 +205,7 @@ void* clientHandler(void* arg) {
 
                     send(clientSocket, responseString.c_str(), responseString.length(), 0);
 
-                } else if (newRequest.mutable_inforequest() -> type_request() == false) {
+                } else if (type_request == false) {
                     // Single user
                     string userSearch = newRequest.mutable_inforequest() -> user();
 

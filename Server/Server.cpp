@@ -57,7 +57,7 @@ void* clientHandler(void* arg) {
     fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
 
     while (true) {
-        buffer[1023] = {0};
+        memset(buffer, 0, 1024);
 
         *noHeartbeat = false;
         *reading = true;

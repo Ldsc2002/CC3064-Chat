@@ -89,23 +89,24 @@ int main(int argc, char** argv) {
     char buffer[1024] = {0};
 
     while (true) {
-        buffer[1023] = {0};
+        memset(buffer, 0, 1024);
 
-        printf("Enter email address: ");
+        printf("Enter username: ");
         scanf("%s", buffer);
 
-        bool hasAt = false;
+        bool invalidChar = false;
+
         for (int i = 0; i < strlen(buffer); i++) {
             if (buffer[i] == '@') {
-                hasAt = true;
+                invalidChar = true;
                 break;
             }
         }
 
-        if (hasAt) {
-            break;
+        if (invalidChar) {
+            printf("Invalid username\n");
         } else {
-            printf("Invalid email address\n");
+            break;
         }
     }
 
@@ -113,7 +114,7 @@ int main(int argc, char** argv) {
     string username = (string)buffer;
 
     printf("Client IP: %s\n", ip.c_str());
-    printf("Email: %s\n", buffer);
+    printf("Username: %s\n", buffer);
 
     chat::UserRequest newRegister;
 
@@ -163,6 +164,8 @@ int main(int argc, char** argv) {
 
                 string serializedHeartbeat;
                 heartbeat.SerializeToString(&serializedHeartbeat);
+
+                printf("DEBUG: %s\n", heartbeat.DebugString().c_str());
 
                 send(serverSocket, serializedHeartbeat.c_str(), serializedHeartbeat.length(), 0);
                 sleepTime = 0;
@@ -307,6 +310,8 @@ int main(int argc, char** argv) {
                         infoRequest->set_type_request(false);
                         infoRequest->set_user(recipient);
 
+                        printf("DEBUG: %s\n", userInfo.DebugString().c_str());
+
                         std::string serialized;
                         userInfo.SerializeToString(&serialized);
 
@@ -318,11 +323,11 @@ int main(int argc, char** argv) {
                     }
 
                     case 6: {
-                        printf("- In order to send a private message, enter '1' and then you must enter the recipient's email and the message you want to send\n");
+                        printf("- In order to send a private message, enter '1' and then you must enter the recipient's username and the message you want to send\n");
                         printf("- In order to send a public message, enter '2' and then you must enter the message you want to send\n");
                         printf("- In order to change your status, enter '3' and then you must enter the number of the status you want to change to\n");
                         printf("- In order to get a list of users, enter '4'\n");
-                        printf("- In order to get information about a user, enter '5' and then you must enter the user's email\n");
+                        printf("- In order to get information about a user, enter '5' and then you must enter the user's username\n");
                         printf("- In order to exit, enter '7'\n\n");
                         break;
                     }

@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
     while (true) {
         buffer[1024] = {0};
 
-        printf("Enter enter email address: ");
+        printf("Enter email address: ");
         scanf("%s", buffer);
 
         bool hasAt = false;

@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include "project.pb.h"
 
+#define BUFFERSIZE 2048
+
 using std::string;
 
 string getIP() {
@@ -86,12 +88,11 @@ int main(int argc, char** argv) {
         return 1;
     }
     
-    char buffer[1024] = {0};
+    char buffer[BUFFERSIZE] = {0};
 
     while (true) {
-        memset(buffer, 0, 1024);
-
         printf("Enter username: ");
+        memset(buffer, 0, BUFFERSIZE);
         scanf("%s", buffer);
 
         bool invalidChar = false;
@@ -127,7 +128,7 @@ int main(int argc, char** argv) {
 
     send(serverSocket, serialized.c_str(), serialized.length(), 0);
 
-    int readResult = read(serverSocket, buffer, 1024);
+    int readResult = read(serverSocket, buffer, BUFFERSIZE);
     if (readResult < 0) {
         printf("Error reading from server\n");
         return 1;
@@ -182,7 +183,7 @@ int main(int argc, char** argv) {
                 readResult = -1;
 
                 while(readResult == -1 && *running) {
-                    readResult = read(serverSocket, buffer, 1024);
+                    readResult = read(serverSocket, buffer, BUFFERSIZE);
                 }
 
                 if (readResult < 0 && *running) {
@@ -236,10 +237,12 @@ int main(int argc, char** argv) {
                         string message;
 
                         printf("Enter recipient: ");
+                        memset(buffer, 0, BUFFERSIZE);
                         scanf("%s", buffer);
                         recipient = (string)buffer;
 
                         printf("Enter message: ");
+                        memset(buffer, 0, BUFFERSIZE);
                         scanf("%s", buffer);
                         message = (string)buffer;
 
@@ -262,6 +265,7 @@ int main(int argc, char** argv) {
                         string message;
 
                         printf("Enter message: ");
+                        memset(buffer, 0, BUFFERSIZE);
                         scanf("%s", buffer);
                         message = (string)buffer;
 

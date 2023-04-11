@@ -9,6 +9,8 @@
 #include <fcntl.h>
 #include "project.pb.h"
 
+#define BUFFERSIZE 2048
+
 using std::string;
 
 struct Client {
@@ -31,11 +33,11 @@ int getFirstEmptySlot() {
 }
 
 bool checkIfUserExists(string ip, string email) {
-    //for (int i = 0; i < 100; i++) {
-    //    if (clients[i].ip == ip || clients[i].username == email) {
-    //        return true;
-    //    }
-    //}
+    for (int i = 0; i < 100; i++) {
+       if (clients[i].ip == ip || clients[i].username == email) {
+           return true;
+       }
+    }
 
     return false;
 }
@@ -47,7 +49,7 @@ void* clientHandler(void* arg) {
 
     printf("Thread %lu is handling client\n", thisThread);
 
-    char buffer[1024] = {0};
+    char buffer[BUFFERSIZE] = {0};
     int readResult;
 
     bool* reading = (bool*)mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
@@ -57,7 +59,7 @@ void* clientHandler(void* arg) {
     fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
 
     while (true) {
-        memset(buffer, 0, 1024);
+        memset(buffer, 0, BUFFERSIZE);
 
         *noHeartbeat = false;
         *reading = true;
@@ -87,7 +89,7 @@ void* clientHandler(void* arg) {
             readResult = -1;
 
             while(readResult == -1 && !*noHeartbeat) {
-                readResult = read(clientSocket, buffer, 1024);
+                readResult = read(clientSocket, buffer, BUFFERSIZE);
             }
 
             *reading = false;
@@ -125,7 +127,7 @@ void* clientHandler(void* arg) {
 
         } else {
             chat::UserRequest newRequest;
-            newRequest.ParseFromArray(buffer, 1024);
+            newRequest.ParseFromArray(buffer, BUFFERSIZE);
 
             printf("Received UserRequest:\n%s\n", newRequest.DebugString().c_str());
 

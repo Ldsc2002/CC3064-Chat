@@ -31,11 +31,11 @@ int getFirstEmptySlot() {
 }
 
 bool checkIfUserExists(string ip, string email) {
-    for (int i = 0; i < 100; i++) {
-        if (clients[i].ip == ip || clients[i].username == email) {
-            return true;
-        }
-    }
+    //for (int i = 0; i < 100; i++) {
+    //    if (clients[i].ip == ip || clients[i].username == email) {
+    //        return true;
+    //    }
+    //}
 
     return false;
 }
@@ -57,7 +57,7 @@ void* clientHandler(void* arg) {
     fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
 
     while (true) {
-        buffer[1024] = {0};
+        buffer[1023] = {0};
 
         *noHeartbeat = false;
         *reading = true;
@@ -124,8 +124,14 @@ void* clientHandler(void* arg) {
             break;
 
         } else {
+            std::string newStr(buffer);
+
             chat::UserRequest newRequest;
-            newRequest.ParseFromString((string)buffer);
+            newRequest.ParseFromString((string)newStr);
+
+            printf("Option: %d", newRequest.option());
+            printf(" Type: %d", newRequest.mutable_inforequest() -> type_request());
+            printf(" Username: %s ", newRequest.mutable_inforequest() -> user().c_str());
 
             if (newRequest.option() == 1) {
                 // User registration
@@ -169,7 +175,10 @@ void* clientHandler(void* arg) {
             } else if (newRequest.option() == 2) {
                 // User information request
 
-                if (newRequest.mutable_inforequest() -> type_request() == true) {
+                bool type_request = newRequest.mutable_inforequest() -> type_request(); 
+                printf("%d", type_request);
+
+                if (type_request == true) {
                     // All users
                     printf("Thread %lu: User %s wants to get all users\n", thisThread, clients[clientSlot].username.c_str());
 

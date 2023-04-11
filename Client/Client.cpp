@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     char buffer[1024] = {0};
 
     while (true) {
-        buffer[1024] = {0};
+        buffer[1023] = {0};
 
         printf("Enter email address: ");
         scanf("%s", buffer);
@@ -295,11 +295,9 @@ int main(int argc, char** argv) {
                     }
 
                     case 5: {
-                        string recipient;
-
+                        std::string recipient;
                         printf("Enter user: ");
-                        scanf("%s", buffer);
-                        recipient = (string)buffer;
+                        std::cin >> recipient;
 
                         chat::UserRequest userInfo;
                         userInfo.set_option(2);
@@ -307,8 +305,8 @@ int main(int argc, char** argv) {
                         userInfo.mutable_inforequest() -> set_type_request(false);
                         userInfo.mutable_inforequest() -> set_user(recipient);
 
-                        string serialized;
-                        userInfo.SerializeToString(&serialized);
+                        std::string serialized;
+                        userInfo.SerializeToString(&serialized);          
 
                         send(serverSocket, serialized.c_str(), serialized.length(), 0);
 

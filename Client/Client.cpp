@@ -202,6 +202,9 @@ int main(int argc, char** argv) {
                             printf("%s: %s\n", response.mutable_connectedusers() -> connectedusers(i).username().c_str(), response.mutable_connectedusers() -> connectedusers(i).ip().c_str());
                         }
                     } else if (response.option() == 4) {
+
+                        printf("Mensaje Debug:\n%s\n", response.DebugString().c_str());
+
                         if (response.has_message()) {
                             if (response.mutable_message() -> message_type() == true) {
                                 printf("Public message from %s: %s\n", response.mutable_message() -> sender().c_str(), response.mutable_message() -> message().c_str());

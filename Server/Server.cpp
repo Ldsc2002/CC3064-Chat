@@ -276,34 +276,40 @@ void* clientHandler(void* arg) {
 
                     send(clientSocket, responseString.c_str(), responseString.length(), 0);
 
+                    //clear buffer and send message to recipient
+                    memset(buffer, 0, sizeof(buffer));
+
                     chat::ServerResponse sentMessage;
                     sentMessage.set_option(4);
                     sentMessage.set_code(200);
                     sentMessage.set_servermessage("New message");
-                    sentMessage.mutable_message() -> set_message(newMsg);
-                    sentMessage.mutable_message() -> set_sender(sender);
+
+                    chat::newMessage* finalMessage = sentMessage.mutable_message();
+                    finalMessage -> set_sender(sender.c_str());
+                    finalMessage -> set_message(newMsg.c_str());
 
                     string sentMsg;
 
                     if (recipient == "all") {
-                        sentMessage.mutable_message() -> set_message_type(true);
+                        finalMessage -> set_message_type(true);
                         
                         sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
                             if (clients[i].username != sender && clients[i].status != 0) {
-                                send(clients[i].socket, sentMsg.c_str(), sentMsg.length(), 0);
+                                send(clients[i].socket, sentMsg.c_str(), sentMsg.size(), 0);
                             }
                         }
                     } else {
-                        sentMessage.mutable_message() -> set_message_type(false);
-                        sentMessage.mutable_message() -> set_recipient(recipient);
+                        finalMessage -> set_message_type(false);
+                        finalMessage -> set_recipient(recipient.c_str());
+                        finalMessage -> set_message(newMsg.c_str());
 
                         sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
-                            if (clients[i].username == sender) {
-                                send(clients[i].socket, sentMsg.c_str(), sentMsg.length(), 0);
+                            if (clients[i].username == recipient) {
+                                send(clients[i].socket, sentMsg.c_str(), sentMsg.size(), 0);
                                 break;
                             }
                         }

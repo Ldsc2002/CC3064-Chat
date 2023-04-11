@@ -42,7 +42,7 @@ string getIP() {
     char buffer[80];
     const char* p = inet_ntop(AF_INET, &name.sin_addr, buffer, 80);
     
-    if(p != NULL) {
+    if (p != NULL) {
         close(sock);
         string res = (string)buffer;
         return res;
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 
     string serverIP = (string)argv[1];
     int serverPort = atoi(argv[2]);
-    
+
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     struct sockaddr_in serverAddress;

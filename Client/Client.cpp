@@ -52,12 +52,19 @@ string getIP() {
     }
 }
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc != 3) {
+        printf("Usage: ./Client <IP> <PORT>\n");
+        return 1;
+    }
+
+    string serverIP = (string)argv[1];
+    int serverPort = atoi(argv[2]);
+    
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     struct sockaddr_in serverAddress;
     int serverSocket;
-    int serverPort;
 
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
@@ -66,10 +73,9 @@ int main() {
     }
 
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(8080);
+    serverAddress.sin_port = htons(serverPort);
 
-    if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
-    // if (inet_pton(AF_INET, "3.84.254.159", &serverAddress.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, serverIP.c_str(), &serverAddress.sin_addr) <= 0) {
         printf("Error converting address\n");
         return 1;
     }

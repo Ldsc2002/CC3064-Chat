@@ -33,11 +33,11 @@ int getFirstEmptySlot() {
 }
 
 bool checkIfUserExists(string ip, string email) {
-    for (int i = 0; i < 100; i++) {
-       if (clients[i].ip == ip || clients[i].username == email) {
-           return true;
-       }
-    }
+    //for (int i = 0; i < 100; i++) {
+    //   if (clients[i].ip == ip || clients[i].username == email) {
+    //       return true;
+    //   }
+    //}
 
     return false;
 }
@@ -202,7 +202,8 @@ void* clientHandler(void* arg) {
 
                 } else if (type_request == false) {
                     // Single user
-                    string userSearch = newRequest.mutable_inforequest() -> user();
+                    std::string userSearch = newRequest.inforequest().user();
+                    userSearch.pop_back();
 
                     printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), userSearch.c_str());
 

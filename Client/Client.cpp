@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
                 string serializedHeartbeat;
                 heartbeat.SerializeToString(&serializedHeartbeat);
 
-                printf("DEBUG: %s\n", heartbeat.DebugString().c_str());
+                //printf("DEBUG: %s\n", heartbeat.DebugString().c_str());
 
                 send(serverSocket, serializedHeartbeat.c_str(), serializedHeartbeat.length(), 0);
                 sleepTime = 0;
@@ -305,6 +305,7 @@ int main(int argc, char** argv) {
                         std::string recipient;
                         printf("Enter user: ");
                         std::cin >> recipient;
+                        recipient.push_back('\0');
 
                         chat::UserRequest userInfo;
                         userInfo.set_option(2);
@@ -314,7 +315,7 @@ int main(int argc, char** argv) {
                         infoRequest->set_type_request(false);
                         infoRequest->set_user(recipient);
 
-                        printf("DEBUG: %s\n", userInfo.DebugString().c_str());
+                        //printf("DEBUG: %s\n", userInfo.DebugString().c_str());
 
                         std::string serialized;
                         userInfo.SerializeToString(&serialized);

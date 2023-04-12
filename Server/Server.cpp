@@ -5,7 +5,11 @@
 #include <cstring>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 #include "project.pb.h"
+
+#define BUFFERSIZE 2048
 
 using std::string;
 
@@ -20,7 +24,7 @@ Client clients[100] = {};
 
 int getFirstEmptySlot() {
     for (int i = 0; i < 100; i++) {
-        if (clients[i].username == "") {
+        if (strcmp(clients[i].username.c_str(), "") == 0) {
             return i;
         }
     }
@@ -28,9 +32,9 @@ int getFirstEmptySlot() {
     return -1;
 }
 
-bool checkIfUserExists(string ip) {
+bool checkIfUserExists(string ip, string email) {
     for (int i = 0; i < 100; i++) {
-        if (clients[i].ip == ip) {
+        if (strcmp(clients[i].ip.c_str(), ip.c_str()) == 0 || strcmp(clients[i].username.c_str(), email.c_str()) == 0) {
             return true;
         }
     }
@@ -45,35 +49,54 @@ void* clientHandler(void* arg) {
 
     printf("Thread %lu is handling client\n", thisThread);
 
-    char buffer[1024] = {0};
+    char buffer[BUFFERSIZE] = {0};
     int readResult;
-    
+
+    bool* reading = (bool*)mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    bool* noHeartbeat = (bool*)mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+    int flags = fcntl(clientSocket, F_GETFL, 0);
+    fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
+
     while (true) {
-        bool noHeartbeat = false;
+        memset(buffer, 0, BUFFERSIZE);
+
+        *noHeartbeat = false;
+        *reading = true;
         int pid = fork();
         
         if (pid == 0) {
             int timeInactive = 0;
 
-            while (true) {
-                sleep(10);                
-                timeInactive += 10;
-                printf("Thread %lu: No heartbeat received - %d seconds\n", thisThread, timeInactive);
+            while (*reading) {
+                sleep(1);                
+                timeInactive += 1;
 
-                if (timeInactive >= 60) {
+                if (timeInactive % 60 == 0) {
+                    printf("Thread %lu: No heartbeat received - %d seconds\n", thisThread, timeInactive);
+                }
+
+                if (timeInactive >= 180) {
                     close(clientSocket);
-                    noHeartbeat = true;
+                    *noHeartbeat = true;
                     break;
                 }
             }
 
+            return 0;
+
         } else if (pid > 0) {
-            readResult = read(clientSocket, buffer, 1024);
-            kill(pid, SIGKILL); 
+            readResult = -1;
+
+            while(readResult == -1 && !*noHeartbeat) {
+                readResult = read(clientSocket, buffer, BUFFERSIZE);
+            }
+
+            *reading = false;
             wait(NULL);
         } 
 
-        if (noHeartbeat) {
+        if (*noHeartbeat) {
             printf("Thread %lu: Client disconnected due to inactivity\n", thisThread);
 
             if (clientSlot != -1) {
@@ -104,7 +127,7 @@ void* clientHandler(void* arg) {
 
         } else {
             chat::UserRequest newRequest;
-            newRequest.ParseFromString((string)buffer);
+            newRequest.ParseFromArray(buffer, BUFFERSIZE);
 
             if (newRequest.option() == 1) {
                 // User registration
@@ -115,9 +138,9 @@ void* clientHandler(void* arg) {
                 newResponse.set_code(400);
                 newResponse.set_servermessage("Error registering user");
 
-                if (checkIfUserExists(newRequest.mutable_newuser() -> ip())) {
-                    printf("Thread %lu: User with IP %s already exists\n", thisThread, newRequest.mutable_newuser() -> ip().c_str());
-                    newResponse.set_servermessage("User with this IP already exists");
+                if (checkIfUserExists(newRequest.mutable_newuser() -> ip(), newRequest.mutable_newuser() -> username())) {
+                    printf("Thread %lu: User with IP %s or email %s already exists\n", thisThread, newRequest.mutable_newuser() -> ip().c_str(), newRequest.mutable_newuser() -> username().c_str());
+                    newResponse.set_servermessage("User with this IP or Email already exists");
 
                 } else {
                     clientSlot = getFirstEmptySlot();
@@ -148,7 +171,10 @@ void* clientHandler(void* arg) {
             } else if (newRequest.option() == 2) {
                 // User information request
 
-                if (newRequest.mutable_inforequest() -> type_request() == true) {
+                bool type_request = newRequest.mutable_inforequest() -> type_request(); 
+                printf("%d", type_request);
+
+                if (type_request == true) {
                     // All users
                     printf("Thread %lu: User %s wants to get all users\n", thisThread, clients[clientSlot].username.c_str());
 
@@ -171,9 +197,11 @@ void* clientHandler(void* arg) {
 
                     send(clientSocket, responseString.c_str(), responseString.length(), 0);
 
-                } else {
+                } else if (type_request == false) {
                     // Single user
-                    printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), newRequest.mutable_inforequest() -> user().c_str());
+                    std::string userSearch = newRequest.inforequest().user();
+
+                    printf("Thread %lu: User %s wants to get user %s\n", thisThread, clients[clientSlot].username.c_str(), userSearch.c_str());
 
                     chat::ServerResponse newResponse;
                     newResponse.set_option(2);
@@ -181,12 +209,13 @@ void* clientHandler(void* arg) {
                     newResponse.set_servermessage("User not found");
 
                     for (int i = 0; i < 100; i++) {
-                        if (clients[i].username == newRequest.mutable_inforequest() -> user()) {
-                            chat::UserInfo* newUser = newResponse.mutable_connectedusers() -> add_connectedusers();
-                            newUser -> set_username(clients[i].username);
-                            newUser -> set_ip(clients[i].ip);
-                            newUser -> set_status(clients[i].status);
+                        if (strcmp(clients[i].username.c_str(), userSearch.c_str()) == 0) {
+                            printf("Thread %lu: User %s found\n", thisThread, clients[i].username.c_str());
 
+                            newResponse.mutable_userinforesponse() -> set_username(clients[i].username);
+                            newResponse.mutable_userinforesponse() -> set_ip(clients[i].ip);
+                            newResponse.mutable_userinforesponse() -> set_status(clients[i].status);
+                            
                             newResponse.set_code(200);
                             newResponse.set_servermessage("User found");
                             break;
@@ -199,13 +228,36 @@ void* clientHandler(void* arg) {
                     send(clientSocket, responseString.c_str(), responseString.length(), 0);
                 }
             } else if (newRequest.option() == 3) {
+                bool success = false;
                 // Status change
                 for (int i = 0; i < 100; i++) {
                     if (clients[i].username == newRequest.mutable_status() -> username()) {
                         clients[i].status = newRequest.mutable_status() -> newstatus();
+                        success = true;
                         break;
                     }
                 }
+                
+                chat::ServerResponse newResponse;
+                newResponse.set_option(3);
+
+                if (success) {
+                    printf("Thread %lu: User %s changed status to %d\n", thisThread, newRequest.mutable_status() -> username().c_str(), newRequest.mutable_status() -> newstatus());
+
+                    newResponse.set_code(200);
+                    newResponse.set_servermessage("Status changed");
+
+                } else {
+                    printf("Thread %lu: User %s not found\n", thisThread, newRequest.mutable_status() -> username().c_str());
+
+                    newResponse.set_code(400);
+                    newResponse.set_servermessage("User not found");
+                }
+
+                string responseString;
+                newResponse.SerializeToString(&responseString);
+
+                send(clientSocket, responseString.c_str(), responseString.length(), 0);
 
             } else if (newRequest.option() == 4) {
                 // New message
@@ -219,18 +271,17 @@ void* clientHandler(void* arg) {
                     recipient = newRequest.mutable_message() -> recipient();
                 }
 
-
                 bool online = false;
                 int recipientSlot = -1;
                 for (int i = 0; i < 100; i++) {
-                    if (clients[i].username == recipient && clients[i].status != 0) {
+                    if (strcmp(clients[i].username.c_str(), recipient.c_str()) == 0) {
                         online = true;
                         recipientSlot = i;
                         break;
                     }
                 }
 
-                if (online || recipient == "all") {
+                if (online || strcmp(recipient.c_str(), "all") == 0) {
                     printf("Thread %lu: New message from %s to %s: %s\n", thisThread, sender.c_str(), recipient.c_str(), newMsg.c_str());
 
                     chat::ServerResponse newResponse;
@@ -243,28 +294,32 @@ void* clientHandler(void* arg) {
 
                     send(clientSocket, responseString.c_str(), responseString.length(), 0);
 
+                    //clear buffer and send message to recipient
+                    memset(buffer, 0, sizeof(buffer));
+
                     chat::ServerResponse sentMessage;
                     sentMessage.set_option(4);
                     sentMessage.set_code(200);
                     sentMessage.set_servermessage("New message");
-                    sentMessage.mutable_message() -> set_message(newMsg);
 
-                    if (recipient == "all") {
-                        sentMessage.mutable_message() -> set_message_type(true);
+                    sentMessage.mutable_message() -> CopyFrom(newRequest.message());
+
+                    string sentMsg;
+
+                    if (strcmp(recipient.c_str(), "all") == 0) {
+                        sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
                             if (clients[i].username != sender && clients[i].status != 0) {
-                                send(clients[i].socket, responseString.c_str(), responseString.length(), 0);
+                                send(clients[i].socket, sentMsg.c_str(), sentMsg.size(), 0);
                             }
                         }
                     } else {
-                        sentMessage.mutable_message() -> set_message_type(false);
-                        sentMessage.mutable_message() -> set_sender(sender);
-                        sentMessage.mutable_message() -> set_recipient(recipient);
+                        sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
-                            if (clients[i].username == sender) {
-                                send(clients[i].socket, responseString.c_str(), responseString.length(), 0);
+                            if (strcmp(clients[i].username.c_str(), recipient.c_str()) == 0) {
+                                send(clients[i].socket, sentMsg.c_str(), sentMsg.size(), 0);
                                 break;
                             }
                         }
@@ -305,10 +360,20 @@ void* clientHandler(void* arg) {
         }
     }
 
+    munmap(&reading, sizeof(bool));
+    munmap(&noHeartbeat, sizeof(bool));
+    
     pthread_exit(NULL);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <port>\n", argv[0]);
+        return 1;
+    }
+
+    int port = atoi(argv[1]);    
+
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     struct sockaddr_in serverAddress;
@@ -329,7 +394,7 @@ int main() {
 
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_addr.s_addr = INADDR_ANY;
-    serverAddress.sin_port = htons(8080);
+    serverAddress.sin_port = htons(port);
 
     int bindResult = bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
     if (bindResult < 0) {

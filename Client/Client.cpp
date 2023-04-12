@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
             sleep(1);
             sleepTime++;
 
-            if (sleepTime == 20) {
+            if (sleepTime == 60) {
                 chat::UserRequest heartbeat;
                 heartbeat.set_option(5);
 

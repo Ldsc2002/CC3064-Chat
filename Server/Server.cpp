@@ -129,9 +129,6 @@ void* clientHandler(void* arg) {
             chat::UserRequest newRequest;
             newRequest.ParseFromArray(buffer, BUFFERSIZE);
 
-            printf("Received UserRequest:\n%s\n", newRequest.DebugString().c_str());
-
-
             if (newRequest.option() == 1) {
                 // User registration
                 printf("Thread %lu: User %s wants to register with IP %s\n", thisThread, newRequest.mutable_newuser() -> username().c_str(), newRequest.mutable_newuser() -> ip().c_str());
@@ -215,10 +212,14 @@ void* clientHandler(void* arg) {
                         if (strcmp(clients[i].username.c_str(), userSearch.c_str()) == 0) {
                             printf("Thread %lu: User %s found\n", thisThread, clients[i].username.c_str());
 
-                            chat::UserInfo* newUser = newResponse.mutable_connectedusers() -> add_connectedusers();
-                            newUser -> set_username(clients[i].username);
-                            newUser -> set_ip(clients[i].ip);
-                            newUser -> set_status(clients[i].status);
+                            newResponse.mutable_userinforesponse() -> set_username(clients[i].username);
+                            newResponse.mutable_userinforesponse() -> set_ip(clients[i].ip);
+                            newResponse.mutable_userinforesponse() -> set_status(clients[i].status);
+
+                            // chat::UserInfo* newUser = newResponse.mutable_userinforesponse()
+                            // newUser -> set_username(clients[i].username);
+                            // newUser -> set_ip(clients[i].ip);
+                            // newUser -> set_status(clients[i].status);
                             
                             newResponse.set_code(200);
                             newResponse.set_servermessage("User found");
@@ -275,7 +276,6 @@ void* clientHandler(void* arg) {
                     recipient = newRequest.mutable_message() -> recipient();
                 }
 
-
                 bool online = false;
                 int recipientSlot = -1;
                 for (int i = 0; i < 100; i++) {
@@ -307,15 +307,15 @@ void* clientHandler(void* arg) {
                     sentMessage.set_code(200);
                     sentMessage.set_servermessage("New message");
 
-                    chat::newMessage* finalMessage = sentMessage.mutable_message();
-                    finalMessage -> set_sender(sender.c_str());
-                    finalMessage -> set_message(newMsg.c_str());
+                    sentMessage.mutable_message() -> CopyFrom(newRequest.message());
 
                     string sentMsg;
 
                     if (strcmp(recipient.c_str(), "all") == 0) {
-                        finalMessage -> set_message_type(true);
+                        // finalMessage -> set_message_type(true);
                         
+                        printf("SENDING TO RECIPIENT:\n%s\n", sentMessage.DebugString().c_str());
+
                         sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
@@ -324,14 +324,17 @@ void* clientHandler(void* arg) {
                             }
                         }
                     } else {
-                        finalMessage -> set_message_type(false);
-                        finalMessage -> set_recipient(recipient.c_str());
+                        // finalMessage -> set_message_type(false);
+                        // finalMessage -> set_recipient(recipient.c_str());
+
+                        printf("SENDING TO RECIPIENT:\n%s\n", sentMessage.DebugString().c_str());
 
                         sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
                             if (strcmp(clients[i].username.c_str(), recipient.c_str()) == 0) {
-                                send(clients[i].socket, sentMsg.c_str(), sentMsg.size(), 0);
+                                // send(clients[i].socket, sentMsg.c_str(), sentMsg.size(), 0);
+                                write(clients[i].socket, sentMsg.c_str(), sentMsg.size());
                                 break;
                             }
                         }

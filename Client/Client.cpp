@@ -193,13 +193,18 @@ int main(int argc, char** argv) {
                 }
 
                 chat::ServerResponse response;
-                response.ParseFromString((string)buffer);
+                response.ParseFromArray(buffer, 1024);
 
                 if (response.code() == 200) {
                     if (response.option() == 2) {
                         printf("Success: %s\n", response.servermessage().c_str());
-                        for (int i = 0; i < response.mutable_connectedusers() -> connectedusers_size(); i++) {
-                            printf("%s: %s\n", response.mutable_connectedusers() -> connectedusers(i).username().c_str(), response.mutable_connectedusers() -> connectedusers(i).ip().c_str());
+                        
+                        if (response.has_userinforesponse() == true) {
+                            printf("%s: %s\n", response.mutable_userinforesponse() -> username().c_str(), response.mutable_userinforesponse() -> ip().c_str());
+                        } else {
+                            for (int i = 0; i < response.mutable_connectedusers() -> connectedusers_size(); i++) {
+                                printf("%s: %s\n", response.mutable_connectedusers() -> connectedusers(i).username().c_str(), response.mutable_connectedusers() -> connectedusers(i).ip().c_str());
+                            }
                         }
                     } else if (response.option() == 3) {
                         printf("Success: %s\n", response.servermessage().c_str());
@@ -207,11 +212,12 @@ int main(int argc, char** argv) {
 
                         //printf("Mensaje Debug:\n%s\n", response.DebugString().c_str());
 
+                        chat::newMessage message_received = response.message();
                         if (response.has_message()) {
                             if (response.mutable_message() -> message_type() == true) {
-                                printf("Public message from %s: %s\n", response.mutable_message() -> sender().c_str(), response.mutable_message() -> message().c_str());
+                                printf("Public message from %s: %s\n", message_received.sender().c_str(), message_received.message().c_str());
                             } else {
-                                printf("Private message from %s: %s\n", response.mutable_message() -> sender().c_str(), response.mutable_message() -> message().c_str());
+                                printf("Private message from %s: %s\n", message_received.sender().c_str(), message_received.message().c_str());
                             }
                         } else {
                             printf("Success: %s\n", response.servermessage().c_str());

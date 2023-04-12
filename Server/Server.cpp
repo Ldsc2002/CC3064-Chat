@@ -286,7 +286,7 @@ void* clientHandler(void* arg) {
                     }
                 }
 
-                if (online || strcpm(recipient.c_str(), "all") == 0) {
+                if (online || strcmp(recipient.c_str(), "all") == 0) {
                     printf("Thread %lu: New message from %s to %s: %s\n", thisThread, sender.c_str(), recipient.c_str(), newMsg.c_str());
 
                     chat::ServerResponse newResponse;
@@ -313,7 +313,7 @@ void* clientHandler(void* arg) {
 
                     string sentMsg;
 
-                    if (recipient == "all") {
+                    if (strcmp(recipient.c_str(), "all") == 0) {
                         finalMessage -> set_message_type(true);
                         
                         sentMessage.SerializeToString(&sentMsg);
@@ -325,7 +325,7 @@ void* clientHandler(void* arg) {
                         }
                     } else {
                         finalMessage -> set_message_type(false);
-                        // finalMessage -> set_recipient(recipient.c_str());
+                        finalMessage -> set_recipient(recipient.c_str());
 
                         sentMessage.SerializeToString(&sentMsg);
 

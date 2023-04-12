@@ -24,7 +24,7 @@ Client clients[100] = {};
 
 int getFirstEmptySlot() {
     for (int i = 0; i < 100; i++) {
-        if (clients[i].username == "") {
+        if (strcmp(clients[i].username.c_str(), "") == 0) {
             return i;
         }
     }
@@ -33,11 +33,11 @@ int getFirstEmptySlot() {
 }
 
 bool checkIfUserExists(string ip, string email) {
-    //for (int i = 0; i < 100; i++) {
-    //   if (clients[i].ip == ip || clients[i].username == email) {
-    //       return true;
-    //   }
-    //}
+    for (int i = 0; i < 100; i++) {
+        if (strcmp(clients[i].ip.c_str(), ip.c_str()) == 0 || strcmp(clients[i].username.c_str(), email.c_str()) == 0) {
+            return true;
+        }
+    }
 
     return false;
 }
@@ -215,11 +215,6 @@ void* clientHandler(void* arg) {
                             newResponse.mutable_userinforesponse() -> set_username(clients[i].username);
                             newResponse.mutable_userinforesponse() -> set_ip(clients[i].ip);
                             newResponse.mutable_userinforesponse() -> set_status(clients[i].status);
-
-                            // chat::UserInfo* newUser = newResponse.mutable_userinforesponse()
-                            // newUser -> set_username(clients[i].username);
-                            // newUser -> set_ip(clients[i].ip);
-                            // newUser -> set_status(clients[i].status);
                             
                             newResponse.set_code(200);
                             newResponse.set_servermessage("User found");
@@ -312,10 +307,6 @@ void* clientHandler(void* arg) {
                     string sentMsg;
 
                     if (strcmp(recipient.c_str(), "all") == 0) {
-                        // finalMessage -> set_message_type(true);
-                        
-                        printf("SENDING TO RECIPIENT:\n%s\n", sentMessage.DebugString().c_str());
-
                         sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
@@ -324,17 +315,11 @@ void* clientHandler(void* arg) {
                             }
                         }
                     } else {
-                        // finalMessage -> set_message_type(false);
-                        // finalMessage -> set_recipient(recipient.c_str());
-
-                        printf("SENDING TO RECIPIENT:\n%s\n", sentMessage.DebugString().c_str());
-
                         sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
                             if (strcmp(clients[i].username.c_str(), recipient.c_str()) == 0) {
-                                // send(clients[i].socket, sentMsg.c_str(), sentMsg.size(), 0);
-                                write(clients[i].socket, sentMsg.c_str(), sentMsg.size());
+                                send(clients[i].socket, sentMsg.c_str(), sentMsg.size(), 0);
                                 break;
                             }
                         }
@@ -381,7 +366,14 @@ void* clientHandler(void* arg) {
     pthread_exit(NULL);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <port>\n", argv[0]);
+        return 1;
+    }
+
+    int port = atoi(argv[1]);    
+
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     struct sockaddr_in serverAddress;
@@ -402,7 +394,7 @@ int main() {
 
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_addr.s_addr = INADDR_ANY;
-    serverAddress.sin_port = htons(8080);
+    serverAddress.sin_port = htons(port);
 
     int bindResult = bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
     if (bindResult < 0) {

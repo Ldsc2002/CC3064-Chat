@@ -167,8 +167,6 @@ int main(int argc, char** argv) {
                 string serializedHeartbeat;
                 heartbeat.SerializeToString(&serializedHeartbeat);
 
-                //printf("DEBUG: %s\n", heartbeat.DebugString().c_str());
-
                 send(serverSocket, serializedHeartbeat.c_str(), serializedHeartbeat.length(), 0);
                 sleepTime = 0;
             }
@@ -232,9 +230,6 @@ int main(int argc, char** argv) {
                     } else if (response.option() == 3) {
                         printf("Success: %s\n", response.servermessage().c_str());
                     } else if (response.option() == 4) {
-
-                        //printf("Mensaje Debug:\n%s\n", response.DebugString().c_str());
-
                         chat::newMessage message_received = response.message();
                         if (response.has_message()) {
                             if (response.mutable_message() -> message_type() == true) {
@@ -385,8 +380,6 @@ int main(int argc, char** argv) {
                         chat::UserInfoRequest* infoRequest = userInfo.mutable_inforequest();
                         infoRequest->set_type_request(false);
                         infoRequest->set_user(recipient);
-
-                        //printf("DEBUG: %s\n", userInfo.DebugString().c_str());
 
                         std::string serialized;
                         userInfo.SerializeToString(&serialized);

@@ -326,12 +326,11 @@ void* clientHandler(void* arg) {
                     } else {
                         finalMessage -> set_message_type(false);
                         finalMessage -> set_recipient(recipient.c_str());
-                        finalMessage -> set_message(newMsg.c_str());
 
                         sentMessage.SerializeToString(&sentMsg);
 
                         for (int i = 0; i < 100; i++) {
-                            if (clients[i].username == recipient) {
+                            if (strcmp(clients[i].username.c_str(), recipient.c_str()) == 0) {
                                 send(clients[i].socket, sentMsg.c_str(), sentMsg.size(), 0);
                                 break;
                             }

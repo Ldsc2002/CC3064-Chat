@@ -205,7 +205,7 @@ int main(int argc, char** argv) {
                         printf("Success: %s\n", response.servermessage().c_str());
                     } else if (response.option() == 4) {
 
-                        printf("Mensaje Debug:\n%s\n", response.DebugString().c_str());
+                        //printf("Mensaje Debug:\n%s\n", response.DebugString().c_str());
 
                         if (response.has_message()) {
                             if (response.mutable_message() -> message_type() == true) {

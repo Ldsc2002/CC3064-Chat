@@ -286,7 +286,7 @@ void* clientHandler(void* arg) {
                     }
                 }
 
-                if (online || recipient == "all") {
+                if (online || strcpm(recipient.c_str(), "all") == 0) {
                     printf("Thread %lu: New message from %s to %s: %s\n", thisThread, sender.c_str(), recipient.c_str(), newMsg.c_str());
 
                     chat::ServerResponse newResponse;

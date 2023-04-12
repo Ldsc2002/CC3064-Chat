@@ -260,15 +260,14 @@ int main(int argc, char** argv) {
                         string recipient;
                         string message;
 
-                        printf("Enter recipient: ");
-                        memset(buffer, 0, BUFFERSIZE);
-                        scanf("%s", buffer);
-                        recipient = (string)buffer;
+                        cout << "Enter recipient: " << endl;
+                        cin.ignore(); // Clear input buffer
+                        getline(cin, recipient);
 
-                        printf("Enter message: ");
-                        memset(buffer, 0, BUFFERSIZE);
-                        scanf("%s", buffer);
-                        message = (string)buffer;
+                        cout << "Enter message: " << endl;
+                        getline(cin, message);
+
+                        printf("Sending private message to %s: %s\n", recipient.c_str(), message.c_str());
 
                         chat::UserRequest privateMessage;
                         privateMessage.set_option(4);
@@ -288,10 +287,9 @@ int main(int argc, char** argv) {
                     case 2: {
                         string message;
 
-                        printf("Enter message: ");
-                        memset(buffer, 0, BUFFERSIZE);
-                        scanf("%s", buffer);
-                        message = (string)buffer;
+                        cout << "Enter message: " << endl;
+                        cin.ignore(); // Clear input buffer
+                        getline(cin, message);
 
                         chat::UserRequest publicMessage;
                         publicMessage.set_option(4);
@@ -354,7 +352,8 @@ int main(int argc, char** argv) {
                         string recipient;
 
                         cout << "Enter recipient: " << endl;
-                        cin >> recipient;
+                        cin.ignore(); // Clear input buffer
+                        getline(cin, recipient);
 
                         chat::UserRequest userInfo;
                         userInfo.set_option(2);

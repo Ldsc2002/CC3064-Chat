@@ -325,7 +325,7 @@ void* clientHandler(void* arg) {
                         }
                     } else {
                         finalMessage -> set_message_type(false);
-                        finalMessage -> set_recipient(recipient.c_str());
+                        // finalMessage -> set_recipient(recipient.c_str());
 
                         sentMessage.SerializeToString(&sentMsg);
 

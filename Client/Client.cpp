@@ -200,10 +200,33 @@ int main(int argc, char** argv) {
                         printf("Success: %s\n", response.servermessage().c_str());
                         
                         if (response.has_userinforesponse() == true) {
-                            printf("%s: %s\n", response.mutable_userinforesponse() -> username().c_str(), response.mutable_userinforesponse() -> ip().c_str());
+                            string status_temp = "Active";
+                            int statusCode_temp = response.mutable_userinforesponse() -> status();
+
+                            if (statusCode_temp == 1) {
+                                status_temp = "Activo";
+                            } else if (statusCode_temp == 2) {
+                                status_temp = "Ocupado";
+                            } else if (statusCode_temp == 3) {
+                                status_temp = "Inactivo";
+                            }
+                            printf("Username: %s | IP: %s Status: %s\n", response.mutable_userinforesponse() -> username().c_str(), response.mutable_userinforesponse() -> ip().c_str(), status_temp.c_str());
+
                         } else {
                             for (int i = 0; i < response.mutable_connectedusers() -> connectedusers_size(); i++) {
-                                printf("%s: %s\n", response.mutable_connectedusers() -> connectedusers(i).username().c_str(), response.mutable_connectedusers() -> connectedusers(i).ip().c_str());
+
+                                string status_temp = "Active";
+                                int statusCode_temp = response.mutable_connectedusers() -> connectedusers(i).status();
+
+                                if (statusCode_temp == 1) {
+                                    status_temp = "Activo";
+                                } else if (statusCode_temp == 2) {
+                                    status_temp = "Ocupado";
+                                } else if (statusCode_temp == 3) {
+                                    status_temp = "Inactivo";
+                                }
+
+                                printf("Username: %s | IP: %s Status: %s\n", response.mutable_connectedusers() -> connectedusers(i).username().c_str(), response.mutable_connectedusers() -> connectedusers(i).ip().c_str(), status_temp.c_str());
                             }
                         }
                     } else if (response.option() == 3) {
